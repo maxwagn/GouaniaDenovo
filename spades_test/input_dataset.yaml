@@ -1,0 +1,6 @@
+- "left reads":
+  - "/data/antwerpen/grp/asvardal/miniconda3/envs/SPADES/share/spades-3.13.0-0/share/spades/test_dataset/ecoli_1K_1.fq.gz"
+  "orientation": "fr"
+  "right reads":
+  - "/data/antwerpen/grp/asvardal/miniconda3/envs/SPADES/share/spades-3.13.0-0/share/spades/test_dataset/ecoli_1K_2.fq.gz"
+  "type": "paired-end"

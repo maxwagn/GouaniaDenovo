@@ -44,7 +44,10 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[4],  kmer = K_mers[0]),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[4],  kmer = K_mers[0]),
         ###### ABySS ######
-        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[4],  kmer = K_mers[0])
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[4],  kmer = K_mers[0])
+        ###### SPAdes #####
+        expand("assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/scaffolds.fasta", id = id_list[4],  kmer = K_mers[0])
+
 
 rule fastqc_raw:
     input:
@@ -152,5 +155,17 @@ rule ABySS:
     shell:
         "abyss-pe name={output.outdir} k={params.ksize} in='{input.fRead} {input.rRead}'"
 
-
+rule SPADES:
+    input:
+        fRead = "trimmed/{id}_1P_trim.fastq",
+        rRead = "trimmed/{id}_2P_trim.fastq"
+    output:
+        "assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/scaffolds.fasta",
+        outdir = "assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/"
+    params:
+        ksize = "{kmer}"
+    conda:
+        "envs/SPADES.yml"
+    shell:
+        "spades.py -k {params.ksize}-1 {input.fRead} -2 {input.rRead} --careful --covcutiff -o {output.outdir}"
 
