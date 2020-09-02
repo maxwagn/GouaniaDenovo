@@ -1,0 +1,11 @@
+max_rd_len=150
+[LIB]
+avg_ins=500
+reverse_seq=0
+asm_flags=3
+rd_len_cutoff=110
+rank=1
+pair_num_cutoff=3
+map_len=32
+q1=trimmed/Gwilldenowi_4616STDY8352651_1P_trim.fastq
+q2=trimmed/Gwilldenowi_4616STDY8352651_2P_trim.fastq

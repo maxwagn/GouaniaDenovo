@@ -1,0 +1,21 @@
+name: ABySS
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - abyss=2.0.2=h51208dd_5
+  - bwa=0.7.17=hed695b0_7
+  - libedit=3.1.20191231=h14c3975_1
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libgfortran-ng=7.3.0=hdf63c60_0
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - make=4.2.1=h1bed415_1
+  - mpi=1.0=openmpi
+  - ncurses=6.2=he6710b0_1
+  - openmpi=4.0.2=hb1b8bf9_1
+  - pandoc=2.10.1=0
+  - perl=5.26.2=h14c3975_0
+  - sqlite=3.33.0=h62c20be_0
+  - zlib=1.2.11=h7b6447c_3
+prefix: /data/antwerpen/grp/asvardal/miniconda3/envs/ABySS

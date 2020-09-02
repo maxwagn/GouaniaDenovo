@@ -1,0 +1,33 @@
+# GOUANIA PHYLOGENOMICS CONFIG.YAML
+# original-template file: /scratch/antwerpen/grp/asvardal/projects/anabantoid/analyses/BettaGenomics/snakemake/VariantCalling
+# This file should contain everything to configure the workflow on a global scale.
+# In case of sample based data, it should be complemented by a samples.tsv file that contains
+# one row per sample. It can be parsed easily via pandas.
+
+sample_mt: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/metaAndconfig/Gouania_deNovo_26082020.tsv
+
+ana_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/analyses
+
+raw_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/rawdata
+
+
+report_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/reports
+
+#### SOAPDENOVO CONFIG FILE PARAMETERS
+#maximal read length
+max_rd_len: 150
+#average insert size of the library
+avg_ins: 500
+#if sequences are forward-reverse of reverse-forward
+reverse_seq: 0
+#in which part(s) the reads are used (only contigs, only scaffolds, both contigs and scaffolds, only gap closure)
+asm_flags: 3
+#cut the reads to the given length
+rd_len_cutoff: 110 
+#in which order the reads are used while scaffolding
+rank: 1
+#cutoff of pair number for a reliable connection (at least 3 for short insert size)
+pair_num_cutoff: 3
+#minimum aligned length to contigs for a reliable read location (at least 32 for short insert size)
+map_len: 32
+

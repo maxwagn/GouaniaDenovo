@@ -1,0 +1,4 @@
+assemblies/
+trimmed/
+.snakemake/
+reports/

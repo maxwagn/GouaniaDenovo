@@ -1,0 +1,6 @@
+unique_id	sequence_id	Species	ecotype	sample_common_name	sample_supplier_name	read_files	read_type
+A00B1	Gwilldenowi_4616STDY8352651	Gouania willdenowi	stout	Gouania willdenowi	fGouWil4	/scratch/antwerpen/grp/asvardal/projects/clingfishes/raw_reads/sanger_institute/4616STDY8352651_raw.cram	cram
+A00B5	Gorientalis_4616STDY8352652	Gouania orientalis	stout	Gouania sp.star_Greece	fGousGr1	/scratch/antwerpen/grp/asvardal/projects/clingfishes/raw_reads/sanger_institute/4616STDY8352652_raw.cram	cram
+A00B7	Ghofrichteri_4616STDY8352653	Gouania hofrichteri	slender	Gouania sp.worm_Greece	fGouwGr1	/scratch/antwerpen/grp/asvardal/projects/clingfishes/raw_reads/sanger_institute/4616STDY8352653_raw.cram	cram
+A00B8	Gpigra_4616STDY8352654	Gouania pigra	slender	Gouania sp.worm_Adria	fGouwAd1	/scratch/antwerpen/grp/asvardal/projects/clingfishes/raw_reads/sanger_institute/4616STDY8352654_raw.cram	cram
+A00B9	Llepadogaster_D86	Lepadogaster lepadogaster	outgroup			/scratch/antwerpen/grp/asvardal/projects/clingfishes/outgroup/Lep_lep/D86_interleaved.fq.gz	fastq_interleaved
