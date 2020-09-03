@@ -34,19 +34,19 @@ rule all:
         #"reports/trim/multiqc_report.html"
         #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_list)
         ###### SOAP DENOVO ######
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[4],  kmer = K_mers[0]),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[4],  kmer = K_mers[0]),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list,  kmer = K_mers),
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[4],  kmer = K_mers[0])
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[0],  kmer = K_mers[0])
         ###### SPAdes #####
-        expand("assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/scaffolds.fasta", id = id_list[4],  kmer = K_mers[0])
+        #expand("assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/scaffolds.fasta", id = id_list[4],  kmer = K_mers[0])
 
 
 rule fastqc_raw:
@@ -120,10 +120,11 @@ rule soapdenovo:
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq",
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff",
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics",
-        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
+        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics"
+        #outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
     params:
-        ksize = "{kmer}"
+        ksize = "{kmer}",
+        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
     conda:
         "envs/SoapDenovo.yml"
     resources:
@@ -133,14 +134,15 @@ rule soapdenovo:
         """
         if (({params.ksize} <= 63)); 
         then
-        SOAPdenovo-63mer all -s {input.config} -K {params.ksize} -R -o {output.outdir}
+        SOAPdenovo-63mer all -s {input.config} -K {params.ksize} -R -o {params.outdir}
         elif ((63 < {params.ksize} <= 127));
         then
-        SOAPdenovo-127mer all -s {input.config} -K {params.ksize} -R -o {output.outdir}
+        SOAPdenovo-127mer all -s {input.config} -K {params.ksize} -R -o {params.outdir}
         else
         echo "K-mer size has to be set between 1 and 127"
         fi
         """
+
 rule ABySS:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
@@ -153,7 +155,7 @@ rule ABySS:
     conda:
         "envs/ABySS.yml"
     shell:
-        "abyss-pe name={output.outdir} k={params.ksize} in='{input.fRead} {input.rRead}'"
+        "abyss-pe name={output.outdir} w=-vv k={params.ksize} se='{input.fRead} {input.rRead}'" #w=-vv in=se or pe
 
 rule SPADES:
     input:
@@ -161,11 +163,12 @@ rule SPADES:
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         "assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/scaffolds.fasta",
-        outdir = "assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}/"
+        #outdir = "assemblies/{id}_SPAdes/{kmer}KSize/{id}_spades_K{kmer}"
     params:
-        ksize = "{kmer}"
+        ksize = "{kmer}",
+        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_spaded_K{kmer}/"
     conda:
         "envs/SPADES.yml"
     shell:
-        "spades.py -k {params.ksize}-1 {input.fRead} -2 {input.rRead} --careful --covcutiff -o {output.outdir}"
+        "spades.py -k {params.ksize}-1 {input.fRead} -2 {input.rRead} --careful --covcutiff -o {params.outdir}"
 
