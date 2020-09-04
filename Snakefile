@@ -165,11 +165,11 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa"#,
-        #outdir = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}"
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa",
     params:
+        pwd = os.getcwd(),
         ksize = "{kmer}",
-        outdir = "assemblies/{id}_ABySS/{kmer}KSize",
+        outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
         name = "{id}_abyss_K{kmer}"
     resources:
         mem_gb = 600,
@@ -177,8 +177,9 @@ rule ABySS:
     conda:
         "envs/ABySS.yml"
     shell:
-        "abyss-pe -C {params.outdir} name={params.name} k={params.ksize} in='{input.fRead} {input.rRead}'" #w=-vv in=se or pe
-
+        """
+        abyss-pe -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}'
+        """
 rule SPADES:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
