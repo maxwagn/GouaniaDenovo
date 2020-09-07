@@ -22,7 +22,8 @@ id_list = sample_mt["sequence_id"].tolist()
 
 #SOAPdenovo2 has two commands, SOAPdenovo-63mer and SOAPdenovo-127mer. 
 #The first one is suitable for assembly with k-mer values less than 63 bp, requires less memory and runs faster. The latter one works for k-mer values less than 127 bp.
-K_mers = [65, 75, 85, 95, 105, 115]
+#K_mers = [65, 75, 85, 95, 105, 115]
+K_mers = [65, 115]
 soapout_ext = [".newContigIndex",".links",".scaf_gap",".scaf",".gapSeq",".scafSeq",".contigPosInscaff",".bubbleInScaff",".scafStatistics"]
 
 
@@ -160,7 +161,7 @@ rule soapdenovo:
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics"
         #outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
-    threads: 24 
+    threads: 16 
     params:
         ksize = "{kmer}",
         outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
@@ -170,13 +171,24 @@ rule soapdenovo:
         mem_gb = 200,
         walltime = 72
     shell:
+        #"""
+        #if (({params.ksize} <= 63)); 
+        #then
+        #SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        #elif ((63 < {params.ksize} <= 127));
+        #then
+        #SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        #else
+        #echo "K-mer size has to be set between 1 and 127"
+        #fi
+        #"""
         """
         if (({params.ksize} <= 63)); 
         then
-        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -o {params.outdir}
         elif ((63 < {params.ksize} <= 127));
         then
-        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -o {params.outdir}
         else
         echo "K-mer size has to be set between 1 and 127"
         fi
