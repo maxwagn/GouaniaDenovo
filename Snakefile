@@ -34,7 +34,9 @@ rule all:
         #"reports/trim/multiqc_report.html"
         #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_listi)
         ##### KmerGenie #####
-        #expand("reports/KmerGenie/{id}_{read}_trim_histograms_report.html", id = id_list, read = readnames)
+        #expand("reports/KmerGenie/{id}_{read}_trim_histograms_report.html", id = id_list[0], read = readnames[0])
+        #"metaAndconfig/KmerGenie/KmerGenie_readlist.txt"
+        #"reports/KmerGenie/report.html"
         ###### SOAP DENOVO ######
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
@@ -45,10 +47,20 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list,  kmer = K_mers),
+        ########
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[0],  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[0],  kmer = K_mers)
         ###### ABySS ######
-        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[4],  kmer = K_mers[0])
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[0],  kmer = K_mers[0])
         ###### SPAdes #####
-        #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[4])
+        #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
 rule fastqc_raw:
     input:
@@ -76,8 +88,9 @@ rule trimmomatic:
         funp = "trimmed/{id}_1P_unpaired.fastq",
         rout = "trimmed/{id}_2P_trim.fastq",
         runp = "trimmed/{id}_2P_unpaired.fastq"
+    threads: 8
     shell:
-        "trimmomatic PE -threads 8 {input.f} {input.r} {output.fout} {output.funp} {output.rout} {output.runp} ILLUMINACLIP:adapterseq/Adapters_PE.fa:2:30:10: LEADING:30 TRAILING:30 SLIDINGWINDOW:4:15 MINLEN:80"
+        "trimmomatic PE -threads {threads} {input.f} {input.r} {output.fout} {output.funp} {output.rout} {output.runp} ILLUMINACLIP:adapterseq/Adapters_PE.fa:2:30:10: LEADING:30 TRAILING:30 SLIDINGWINDOW:4:15 MINLEN:80"
 
 rule fastqc_trim:
     input:
@@ -108,21 +121,29 @@ rule soap_config:
     shell:
         "python3 scripts/writesoapconfig.py {output.soapconfig} {input.fRead} {input.rRead}"
 
+rule KmerGenie_prep:
+    input:
+        expand("trimmed/{id}_{read}_trim.fastq", id = id_list, read = readnames)
+    output:
+        readlist = "metaAndconfig/KmerGenie/KmerGenie_readlist.txt"
+    shell:
+        "ls -1 {input} > {output.readlist}"
+
 rule KmerGenie:
     #https://onestopdataanalysis.com/estimate-genome-size-best-k-mer-size-for-assembly/
     input:
-        inRead = "trimmed/{id}_{read}_trim.fastq",
+        readlist = "metaAndconfig/KmerGenie/KmerGenie_readlist.txt"
     output:
-        "reports/KmerGenie/{id}_{read}_trim_histograms_report.html"
-    params:
-        outdir = "reports/KmerGenie/{id}_{read}_trim_"
+        out = "reports/KmerGenie/report.html"
+    #params:
+        #outdir = "reports/KmerGenie/{id}_{read}_trim_"
     resources:
         mem_gb = 400,
         walltime = 48
     conda:
         "envs/KmerGenie.yml"
     shell:
-        "kmergenie {input.inRead} -o {params.outdir} -t 8"
+        "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {output.out} -t 16 --diploid"
 
 rule soapdenovo:
     input:
@@ -139,22 +160,23 @@ rule soapdenovo:
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics"
         #outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
+    threads: 24 
     params:
         ksize = "{kmer}",
         outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
     conda:
         "envs/SoapDenovo.yml"
     resources:
-        mem_gb = 600,
+        mem_gb = 200,
         walltime = 72
     shell:
         """
         if (({params.ksize} <= 63)); 
         then
-        SOAPdenovo-63mer all -p 8 -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
         elif ((63 < {params.ksize} <= 127));
         then
-        SOAPdenovo-127mer all -p 8 -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
         else
         echo "K-mer size has to be set between 1 and 127"
         fi
@@ -171,29 +193,30 @@ rule ABySS:
         ksize = "{kmer}",
         outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
         name = "{id}_abyss_K{kmer}"
+    threads: 16
     resources:
-        mem_gb = 600,
+        mem_gb = 200,
         walltime = 72
     conda:
         "envs/ABySS.yml"
     shell:
-        """
-        abyss-pe -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}'
-        """
+        "abyss-pe -j {threads} -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' "
+
 rule SPADES:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         "assemblies/{id}_SPAdes/scaffolds.fasta"
+    threads: 24
     params:
         outdir = "assemblies/{id}_SPAdes/"
     resources:
-        mem_gb = 600,
+        mem_gb = 200,
         walltime = 72
     conda:
         "envs/SPADES.yml"
     shell:
-        "spades.py -1 {input.fRead} -2 {input.rRead} --careful --cov-cutoff 'auto' -o {params.outdir}"
+        "spades.py -1 {input.fRead} -2 {input.rRead} --careful --cov-cutoff 'auto' -o {params.outdir} -t {threads} "
 
 

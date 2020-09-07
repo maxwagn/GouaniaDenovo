@@ -1,0 +1,10 @@
+trimmed/Ghofrichteri_4616STDY8352653_1P_trim.fastq
+trimmed/Ghofrichteri_4616STDY8352653_2P_trim.fastq
+trimmed/Gorientalis_4616STDY8352652_1P_trim.fastq
+trimmed/Gorientalis_4616STDY8352652_2P_trim.fastq
+trimmed/Gpigra_4616STDY8352654_1P_trim.fastq
+trimmed/Gpigra_4616STDY8352654_2P_trim.fastq
+trimmed/Gwilldenowi_4616STDY8352651_1P_trim.fastq
+trimmed/Gwilldenowi_4616STDY8352651_2P_trim.fastq
+trimmed/Llepadogaster_D86_1P_trim.fastq
+trimmed/Llepadogaster_D86_2P_trim.fastq
