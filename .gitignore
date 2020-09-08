@@ -2,3 +2,6 @@ assemblies/
 trimmed/
 .snakemake/
 reports/
+testdata/
+AbyssTests/
+kmergenieTest/
