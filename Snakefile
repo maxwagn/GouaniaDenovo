@@ -35,11 +35,8 @@ rule all:
         #"reports/trim/multiqc_report.html"
         #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_listi)
         ##### KmerGenie #####
-        #expand("reports/KmerGenie/{id}_{read}_trim_histograms_report.html", id = id_list[0], read = readnames[0])
-        #"metaAndconfig/KmerGenie/KmerGenie_readlist.txt"
-        expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
-        #"reports/KmerGenie/report.html"
-        #"reports/KmerGenie/cluster/histograms_report.html"
+        #expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
+        #expand("reports/KmerGenie/{id}_report.html", id = id_list[2])
         ###### SOAP DENOVO ######
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
@@ -61,9 +58,9 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[0],  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[0],  kmer = K_mers)
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa", id = id_list[0],  kmer = K_mers[0])
+        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv", id = id_list[0],  kmer = K_mers[0])
         ##### Abyss Test
-        #expand("AbyssTests/D26_abyss_K{kmer}-contigs.fa", kmer = [65])
+        #expand("AbyssTests/D26_abyss_K{kmer}-stats.csv", kmer = [65])
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
@@ -143,7 +140,8 @@ rule KmerGenie:
     output:
         "reports/KmerGenie/{id}_report.html"
     params:
-        outdir = "reports/KmerGenie/{id}"
+        outdir = "reports/KmerGenie/{id}",
+        logfile = "reports/KmerGenie/{id}_kmergenie.log"
     threads: 14
     resources:
         mem_gb = 400,
@@ -151,7 +149,7 @@ rule KmerGenie:
     conda:
         "envs/KmerGenie.yml"
     shell:
-        "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid"
+        "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid | tee &> {params.logfile}"
 
 rule soapdenovo:
     input:
@@ -178,24 +176,13 @@ rule soapdenovo:
         mem_gb = 200,
         walltime = 72
     shell:
-        #"""
-        #if (({params.ksize} <= 63)); 
-        #then
-        #SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
-        #elif ((63 < {params.ksize} <= 127));
-        #then
-        #SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
-        #else
-        #echo "K-mer size has to be set between 1 and 127"
-        #fi
-        #"""
         """
         if (({params.ksize} <= 63)); 
         then
-        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -o {params.outdir}
+        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
         elif ((63 < {params.ksize} <= 127));
         then
-        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -o {params.outdir}
+        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
         else
         echo "K-mer size has to be set between 1 and 127"
         fi
@@ -206,26 +193,30 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-contigs.fa",
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv",
     params:
         pwd = os.getcwd(),
         ksize = "{kmer}",
         outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
-        name = "{id}_abyss_K{kmer}"
+        name = "{id}_abyss_K{kmer}",
+        logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}.log"
     threads: 28
     resources:
         mem_gb = 200,
-        walltime = 72
+        walltime = 48 
     conda:
         "envs/ABySS.yml"
     shell:
-        "abyss-pe -j {threads} -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' "
+        """
+        export TMPDIR={params.pwd}/{params.outdir}tmp
+        abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
+         """
 
 rule SPADES:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
-    output:
+    output: 
         "assemblies/{id}_SPAdes/scaffolds.fasta"
     threads: 28
     params:
@@ -244,7 +235,7 @@ rule testAbyss:
         fRead = "testdata/D26_1.fq", 
         rRead = "testdata/D26_2.fq"
     output:
-        "AbyssTests/D26_abyss_K{kmer}-contigs.fa"
+        "AbyssTests/D26_abyss_K{kmer}-stats.csv"
     params:
         pwd = os.getcwd(),
         ksize = "{kmer}",
