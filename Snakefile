@@ -25,7 +25,7 @@ id_list = sample_mt["sequence_id"].tolist()
 #K_mers = [65, 75, 85, 95, 105, 115]
 K_mers = [65, 115]
 soapout_ext = [".newContigIndex",".links",".scaf_gap",".scaf",".gapSeq",".scafSeq",".contigPosInscaff",".bubbleInScaff",".scafStatistics"]
-kmer_ext = ["lowerK.config", "upperK.config", "optimalK.config"]
+kmer_ext = ["lower", "upper", "optimal"]
 
 
 #def get_bestKvalues(wildcards):
@@ -51,9 +51,9 @@ rule all:
         ##### KmerGenie #####
         #expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
         #expand("reports/KmerGenie/{id}_report.html", id = id_list)
-        expand("metaAndconfig/KmerGenie/{id}_lowerK.config", id = id_list),
-        expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
-        expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
+        #expand("metaAndconfig/KmerGenie/{id}_lowerK.config", id = id_list),
+        #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
+        #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
@@ -75,7 +75,7 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[0],  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[0],  kmer = K_mers)
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv", id = id_list[0],  kmer = get_bestKvalues())
+        expand("assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K-stats.csv", id = id_list[0],  kgenie = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
@@ -217,13 +217,14 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv" 
+        "assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K-stats.csv" 
     params:
         pwd = os.getcwd(),
-        ksize = "{kmer}",
-        outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
-        name = "{id}_abyss_K{kmer}",
-        logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}.log"
+        #ksize = "{kmer}",
+        ksize = "metaAndconfig/KmerGenie/{id}_{kgenie}K.config",
+        outdir = "assemblies/{id}_ABySS/{kgenie}KSize/",
+        name = "{id}_abyss_K{kgenie}",
+        logfile = "assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K.log"
     threads: 28
     resources:
         mem_gb = 200,
@@ -232,9 +233,12 @@ rule ABySS:
         "envs/ABySS.yml"
     shell:
         """
+        file={params.ksize}
+        kSIZE=$(cat "$file")
+        echo $kSIZE
         export TMPDIR={params.pwd}/{params.outdir}tmp
-        abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k={params.ksize} in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
-         """
+        abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k=$kSIZE in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
+        """
 
 rule SPADES:
     input:
