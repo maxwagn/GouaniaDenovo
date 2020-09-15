@@ -10,8 +10,8 @@ with open(kmerlogfile, "r") as kmerlog:
         line = line.rstrip()
         if line.startswith("best k:"):
             best_k = int(line.split(": ")[1])
-            lower_k = best_k - 5
-            upper_k = best_k + 5
+            lower_k = best_k - 4 
+            upper_k = best_k + 4
 with open(lower_file, "w") as lower:
     lower.write(str(lower_k))
 with open(upper_file, "w") as upper:

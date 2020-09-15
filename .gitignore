@@ -3,6 +3,4 @@ trimmed/
 .snakemake/
 reports/raw
 reports/trim
-testdata/
-AbyssTests/
-kmergenieTest/
+trash/

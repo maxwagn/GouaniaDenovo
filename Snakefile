@@ -24,7 +24,6 @@ id_list = sample_mt["sequence_id"].tolist()
 #The first one is suitable for assembly with k-mer values less than 63 bp, requires less memory and runs faster. The latter one works for k-mer values less than 127 bp.
 #K_mers = [65, 75, 85, 95, 105, 115]
 K_mers = [65, 115]
-soapout_ext = [".newContigIndex",".links",".scaf_gap",".scaf",".gapSeq",".scafSeq",".contigPosInscaff",".bubbleInScaff",".scafStatistics"]
 kmer_ext = ["lower", "upper", "optimal"]
 
 
@@ -55,27 +54,17 @@ rule all:
         #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
         #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list,  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list,  kmer = K_mers),
-        ########
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list[0],  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[0],  kmer = K_mers),
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[0],  kmer = K_mers)
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list,  kmer = K_mers),
+        ###expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list,  kmer = K_mers),
+        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list,  kmer = K_mers),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list[0],  kmer = kmer_ext),
         ###### ABySS ######
-        expand("assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K-stats.csv", id = id_list[0],  kgenie = kmer_ext)
+        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[0],  kmer = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
@@ -181,20 +170,19 @@ rule soapdenovo:
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
     output:
         # get info about all outpufiles here: https://www.animalgenome.org/bioinfo/resources/manuals/SOAP.html
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", 
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", 
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics"
-        #outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
-    threads: 28 
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex",
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links",
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", 
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", 
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq",
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq",
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff",
+        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
+        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics"
+    threads: 26 
     params:
-        ksize = "{kmer}",
-        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}"
+        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
+        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K"
     conda:
         "envs/SoapDenovo.yml"
     resources:
@@ -202,30 +190,33 @@ rule soapdenovo:
         walltime = 72
     shell:
         """
-        if (({params.ksize} <= 63)); 
+        file={params.ksize}
+        kSIZE=$(cat "$file")
+        echo $kSIZE
+        if (($kSIZE <= 63)); 
         then
-        SOAPdenovo-63mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
-        elif ((63 < {params.ksize} <= 127));
+        SOAPdenovo-63mer all -p {threads} -s {input.config} -K $kSIZE -R -o {params.outdir}
+        elif ((63 < $kSIZE <= 127));
         then
-        SOAPdenovo-127mer all -p {threads} -s {input.config} -K {params.ksize} -R -o {params.outdir}
+        SOAPdenovo-127mer all -p {threads} -s {input.config} -K $kSIZE -R -o {params.outdir}
         else
         echo "K-mer size has to be set between 1 and 127"
         fi
         """
+
 rule ABySS:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K-stats.csv" 
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
-        #ksize = "{kmer}",
-        ksize = "metaAndconfig/KmerGenie/{id}_{kgenie}K.config",
-        outdir = "assemblies/{id}_ABySS/{kgenie}KSize/",
-        name = "{id}_abyss_K{kgenie}",
-        logfile = "assemblies/{id}_ABySS/{kgenie}KSize/{id}_abyss_{kgenie}K.log"
-    threads: 28
+        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
+        outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
+        name = "{id}_abyss_K{kmer}",
+        logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K.log"
+    threads: 26 
     resources:
         mem_gb = 200,
         walltime = 48 
