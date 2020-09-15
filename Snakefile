@@ -25,6 +25,20 @@ id_list = sample_mt["sequence_id"].tolist()
 #K_mers = [65, 75, 85, 95, 105, 115]
 K_mers = [65, 115]
 soapout_ext = [".newContigIndex",".links",".scaf_gap",".scaf",".gapSeq",".scafSeq",".contigPosInscaff",".bubbleInScaff",".scafStatistics"]
+kmer_ext = ["lowerK.config", "upperK.config", "optimalK.config"]
+
+
+#def get_bestKvalues(wildcards):
+#    #### Gets best K-mer +/- 5 value obtained from KmerGenie run
+#    id = wildcards.id
+#    kmer_list = []
+#    with open("reports/KmerGenie/{}_kmergenie.log".format(id), "r") as Kmergenie_report:
+#        for line in Kmergenie_report:
+#            line = line.rstrip()
+#            if line.startswith("best k:"):
+ #               best_k = int(line.split(": ")[1])
+ #               kmer_list.extend([best_k - 5, best_k , best_k + 5])
+ #   return(kmer_list)
 
 
 rule all:
@@ -36,7 +50,10 @@ rule all:
         #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_listi)
         ##### KmerGenie #####
         #expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
-        expand("reports/KmerGenie/{id}_report.html", id = id_list[-1])
+        #expand("reports/KmerGenie/{id}_report.html", id = id_list)
+        expand("metaAndconfig/KmerGenie/{id}_lowerK.config", id = id_list),
+        expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
+        expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
@@ -58,7 +75,7 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list[0],  kmer = K_mers),
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafStatistics", id = id_list[0],  kmer = K_mers)
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv", id = id_list[0],  kmer = K_mers[0])
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv", id = id_list[0],  kmer = get_bestKvalues())
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
@@ -121,7 +138,6 @@ rule soap_config:
     shell:
         "python3 scripts/writesoapconfig.py {output.soapconfig} {input.fRead} {input.rRead}"
 
-
 rule KmerGenie_prep:
     input:
         f = "trimmed/{id}_1P_trim.fastq", 
@@ -149,19 +165,17 @@ rule KmerGenie:
     shell:
         "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid | tee > {params.logfile}"
 
-def get_bestKvalues(wildcards):
-    #### Gets best K-mer +/- 5 value obtained from KmerGenie run
-    id = wildcards.id
-    kmer_list = []
-    with open(str("reports/KmerGenie/{}_kmergenie.log".format(id), "r") as Kmergenie_report:
-        for line in Kmergenie_report:
-            line = line.rstrip()
-            if line.startswith("best k:"):
-                best_k = int(line.split(": ")[1])
-                kmer_list.extend([best_k - 5, best_k , best_k + 5])
-    return(kmer_list)
-    #kmer = get_bestKvalues()
 
+rule KmerInputLowerUpperBest:
+    input: 
+        "reports/KmerGenie/{id}_kmergenie.log"
+    output: 
+        lower = "metaAndconfig/KmerGenie/{id}_lowerK.config",
+        upper = "metaAndconfig/KmerGenie/{id}_upperK.config",
+        optimal = "metaAndconfig/KmerGenie/{id}_optimalK.config"
+    shell:
+        "python3 scripts/kmerextractor.py {input} {output.lower} {output.upper} {output.optimal}"
+    
 rule soapdenovo:
     input:
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
@@ -203,7 +217,7 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv",
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-stats.csv" 
     params:
         pwd = os.getcwd(),
         ksize = "{kmer}",

@@ -1,7 +1,8 @@
 assemblies/
 trimmed/
 .snakemake/
-reports/
+reports/raw
+reports/trim
 testdata/
 AbyssTests/
 kmergenieTest/
