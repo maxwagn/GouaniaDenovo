@@ -1,0 +1,33 @@
+running histogram estimation
+File metaAndconfig/KmerGenie/Gorientalis_4616STDY8352652_KmerGenie.config starts with character "t", hence is interpreted as a list of file names
+Reading 2 read files
+Linear estimation: ~15528 M distinct 71-mers are in the reads
+K-mer sampling: 1/2961
+going to estimate histograms for values of k: 121 115 109 103 97 91 85 79 73 67 61 55 49 43 37 31 25 
+fitting model to histograms to estimate best k
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k109.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k103.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k67.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k121.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k115.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k91.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k97.histo
+estimation of the best k so far: 79
+refining estimation around [73; 85], with a step of 2
+running histogram estimation
+File metaAndconfig/KmerGenie/Gorientalis_4616STDY8352652_KmerGenie.config starts with character "t", hence is interpreted as a list of file names
+Reading 2 read files
+Linear estimation: ~19302 M distinct 53-mers are in the reads
+K-mer sampling: 1/3681
+going to estimate histograms for values of k: 85 83 81 79 77 75 73 
+fitting model to histograms to estimate best k
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k103.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k67.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k109.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k115.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k121.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k91.histo
+could not fit reports/KmerGenie/Gorientalis_4616STDY8352652-k97.histo
+table of predicted num. of genomic k-mers: reports/KmerGenie/Gorientalis_4616STDY8352652.dat
+recommended coverage cut-off for best k: 1
+best k: 79
