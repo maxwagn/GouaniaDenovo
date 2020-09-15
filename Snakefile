@@ -54,17 +54,9 @@ rule all:
         #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
         #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", id = id_list,  kmer = K_mers),
-        ###expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff", id = id_list,  kmer = K_mers),
-        ##expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", id = id_list,  kmer = K_mers),
-        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list[0],  kmer = kmer_ext),
+        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
-        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[0],  kmer = kmer_ext)
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[0],  kmer = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
 
@@ -154,7 +146,6 @@ rule KmerGenie:
     shell:
         "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid | tee > {params.logfile}"
 
-
 rule KmerInputLowerUpperBest:
     input: 
         "reports/KmerGenie/{id}_kmergenie.log"
@@ -167,30 +158,22 @@ rule KmerInputLowerUpperBest:
     
 rule soapdenovo:
     input:
+        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
     output:
         # get info about all outpufiles here: https://www.animalgenome.org/bioinfo/resources/manuals/SOAP.html
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.newContigIndex",
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.links",
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf_gap", 
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scaf", 
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.gapSeq",
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.scafSeq",
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.contigPosInscaff",
-        #"assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_K{kmer}.bubbleInScaff", 
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics"
     threads: 26 
     params:
-        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
         outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K"
     conda:
         "envs/SoapDenovo.yml"
     resources:
         mem_gb = 200,
-        walltime = 72
+        walltime = 48 
     shell:
         """
-        file={params.ksize}
+        file={input.ksize}
         kSIZE=$(cat "$file")
         echo $kSIZE
         if (($kSIZE <= 63)); 
@@ -206,13 +189,13 @@ rule soapdenovo:
 
 rule ABySS:
     input:
+        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
-        ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
         outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
         name = "{id}_abyss_K{kmer}",
         logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K.log"
@@ -224,7 +207,7 @@ rule ABySS:
         "envs/ABySS.yml"
     shell:
         """
-        file={params.ksize}
+        file={input.ksize}
         kSIZE=$(cat "$file")
         echo $kSIZE
         export TMPDIR={params.pwd}/{params.outdir}tmp
