@@ -5,12 +5,14 @@
 # one row per sample. It can be parsed easily via pandas.
 
 sample_mt: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/metaAndconfig/Gouania_deNovo_26082020.tsv
-
 ana_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/analyses
-
 raw_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/rawdata
-
 report_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/reports
+
+### If applicable for QUAST
+reference:
+    fasta: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata/reference/GCF_900634775.1_fGouWil2.1_genomic.fna.gz   
+    gff: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata/reference/GCF_900634775.1_fGouWil2.1_genomic.gff
 
 #### SOAPDENOVO CONFIG FILE PARAMETERS
 #maximal read length

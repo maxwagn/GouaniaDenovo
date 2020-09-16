@@ -16,37 +16,18 @@ sample_mt = pd.read_csv(config["sample_mt"],
                                 dtype=str, sep='\t').set_index("sequence_id", drop=False)
 sample_mt.drop_duplicates(inplace=True)
 n_samples = len(sample_mt)
-
+#id_list = sample_mt["sequence_id"].tolist()
+id_list = ["TESTFILE"]
 readnames = ["1P", "2P"]
-id_list = sample_mt["sequence_id"].tolist()
-
-#SOAPdenovo2 has two commands, SOAPdenovo-63mer and SOAPdenovo-127mer. 
-#The first one is suitable for assembly with k-mer values less than 63 bp, requires less memory and runs faster. The latter one works for k-mer values less than 127 bp.
-#K_mers = [65, 75, 85, 95, 105, 115]
-K_mers = [65, 115]
 kmer_ext = ["lower", "upper", "optimal"]
-
-
-#def get_bestKvalues(wildcards):
-#    #### Gets best K-mer +/- 5 value obtained from KmerGenie run
-#    id = wildcards.id
-#    kmer_list = []
-#    with open("reports/KmerGenie/{}_kmergenie.log".format(id), "r") as Kmergenie_report:
-#        for line in Kmergenie_report:
-#            line = line.rstrip()
-#            if line.startswith("best k:"):
- #               best_k = int(line.split(": ")[1])
- #               kmer_list.extend([best_k - 5, best_k , best_k + 5])
- #   return(kmer_list)
-
 
 rule all:
     input:
-        #expand("reports/raw/{id}_{read}_fastqc.html", id = id_list, read = readnames), 
+        #expand("reports/raw/{illset']['id']ud}_{read}_fastqc.html", id = id_list, read = readnames), 
         #expand("reports/trim/{id}_{read}_trim_fastqc.html", id = id_list, read = readnames)
         #"reports/raw/multiqc_report.html",
         #"reports/trim/multiqc_report.html"
-        #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_listi)
+        #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_list)
         ##### KmerGenie #####
         #expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
         #expand("reports/KmerGenie/{id}_report.html", id = id_list)
@@ -54,11 +35,13 @@ rule all:
         #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
         #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
-        expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
+        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[0],  kmer = kmer_ext)
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
+        ###### QUAST #####
+        "reports/QUAST/report.tsv"
 
 rule fastqc_raw:
     input:
@@ -133,10 +116,10 @@ rule KmerGenie:
     input:
         readlist = "metaAndconfig/KmerGenie/{id}_KmerGenie.config" 
     output:
-        "reports/KmerGenie/{id}_report.html"
+        "reports/KmerGenie/{id}_report.html",
+        logfile = "reports/KmerGenie/{id}_kmergenie.log"
     params:
         outdir = "reports/KmerGenie/{id}",
-        logfile = "reports/KmerGenie/{id}_kmergenie.log"
     threads: 14
     resources:
         mem_gb = 400,
@@ -144,7 +127,7 @@ rule KmerGenie:
     conda:
         "envs/KmerGenie.yml"
     shell:
-        "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid | tee > {params.logfile}"
+        "kmergenie {input.readlist} -l 21 -k 121 -s 6 -o {params.outdir} -t {threads} --diploid | tee > {output.logfile}"
 
 rule KmerInputLowerUpperBest:
     input: 
@@ -162,6 +145,7 @@ rule soapdenovo:
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
     output:
         # get info about all outpufiles here: https://www.animalgenome.org/bioinfo/resources/manuals/SOAP.html
+        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq",
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics"
     threads: 26 
     params:
@@ -193,6 +177,7 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa",
         "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
@@ -214,22 +199,37 @@ rule ABySS:
         abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k=$kSIZE in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
         """
 
-rule SPADES:
+rule quast:
     input:
-        fRead = "trimmed/{id}_1P_trim.fastq",
-        rRead = "trimmed/{id}_2P_trim.fastq"
-    output: 
-        "assemblies/{id}_SPAdes/scaffolds.fasta"
-    threads: 28
+        soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        abyss = expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        ref = config['reference']['fasta'],
+        gff = config['reference']['gff']
+    output:
+        "reports/QUAST/report.tsv"
     params:
-        outdir = "assemblies/{id}_SPAdes/",
-        mem_limit = 200
-    resources:
-        mem_gb = 220,
-        walltime = 72
+        outdir = "reports/QUAST/",
     conda:
-        "envs/SPADES.yml"
+        "envs/Quast.yml"
     shell:
-        "spades.py -1 {input.fRead} -2 {input.rRead} --careful --cov-cutoff 'auto' -o {params.outdir} -t {threads} -m {params.mem_limit}"
+        "quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
+
+#rule SPADES:
+#    input:
+#        fRead = "trimmed/{id}_1P_trim.fastq",
+#        rRead = "trimmed/{id}_2P_trim.fastq"
+#    output: 
+#        "assemblies/{id}_SPAdes/scaffolds.fasta"
+#    threads: 28
+#    params:
+#        outdir = "assemblies/{id}_SPAdes/",
+#        mem_limit = 200
+#    resources:
+#        mem_gb = 220,
+#        walltime = 72
+#    conda:
+#        "envs/SPADES.yml"
+#    shell:
+#        "spades.py -1 {input.fRead} -2 {input.rRead} --careful --cov-cutoff 'auto' -o {params.outdir} -t {threads} -m {params.mem_limit}"
 
 
