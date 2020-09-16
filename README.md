@@ -1,1 +1,2 @@
 # GouaniaDenovo
+<img src=".svg">
