@@ -1,0 +1,13 @@
+name: discovar-denovo
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - discovardenovo=52488=1
+  - jemalloc=4.5.0=0
+  - libgcc=7.2.0=h69d50b8_2
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - zlib=1.2.11=h7b6447c_3
+prefix: /data/antwerpen/grp/asvardal/miniconda3/envs/discovar-denovo

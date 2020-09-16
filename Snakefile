@@ -4,7 +4,7 @@ import os
 jn = os.path.join
 
 #snakemake -p --profile qsub_hs_test --keep-going --immediate-submit --use-conda
-# ${progWriteSoapConfig} -insLength ${libList} -r1 ${forwardReads} -r2 ${reverseReads} -max ${maxReadLength} -ru 3 -rank -o ${soapConf}\n" >> ${fileout}
+#snakemake -np --dag | dot -Tsvg > dag.svg # draw dag graph
 
 
 ## Config
@@ -16,8 +16,8 @@ sample_mt = pd.read_csv(config["sample_mt"],
                                 dtype=str, sep='\t').set_index("sequence_id", drop=False)
 sample_mt.drop_duplicates(inplace=True)
 n_samples = len(sample_mt)
-#id_list = sample_mt["sequence_id"].tolist()
-id_list = ["TESTFILE"]
+id_list = sample_mt["sequence_id"].tolist()
+#id_list = ["TESTFILE"]
 readnames = ["1P", "2P"]
 kmer_ext = ["lower", "upper", "optimal"]
 
@@ -49,6 +49,8 @@ rule fastqc_raw:
     output:
         "reports/raw/{id}_{read}_fastqc.html",
         "reports/raw/{id}_{read}_fastqc.zip"
+    conda:
+        "envs/QCenv.yml"
     shell: 
         "fastqc -o ./reports/raw/ {input.fastq}"
 
@@ -57,6 +59,8 @@ rule multiqc_raw:
         expand("reports/raw/{id}_{read}_fastqc.html", id = id_list, read = readnames)
     output:
         "reports/raw/multiqc_report.html"    
+    conda:
+        "envs/QCenv.yml"
     shell:
         "multiqc ./reports/raw/ -o ./reports/raw/"
 
@@ -79,6 +83,8 @@ rule fastqc_trim:
     output:
         "reports/trim/{id}_{read}_trim_fastqc.html",
         "reports/trim/{id}_{read}_trim_fastqc.zip"
+    conda:
+        "envs/QCenv.yml"
     shell:
         "fastqc -o reports/trim/ {input.fastq}"
 
@@ -87,6 +93,8 @@ rule multiqc_trim:
         expand("reports/trim/{id}_{read}_trim_fastqc.html", id = id_list, read = readnames)
     output:
         "reports/trim/multiqc_report.html"
+    conda:
+        "envs/QCenv.yml"
     shell:
         "multiqc reports/trim/ -o reports/trim/"
 
@@ -120,6 +128,7 @@ rule KmerGenie:
         logfile = "reports/KmerGenie/{id}_kmergenie.log"
     params:
         outdir = "reports/KmerGenie/{id}",
+        #logfile = "reports/KmerGenie/{id}_kmergenie.log"
     threads: 14
     resources:
         mem_gb = 400,
@@ -149,7 +158,8 @@ rule soapdenovo:
         "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics"
     threads: 26 
     params:
-        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K"
+        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K",
+        #config = "metaAndconfig/soapconfig/{id}_soapconfig"
     conda:
         "envs/SoapDenovo.yml"
     resources:
@@ -199,6 +209,17 @@ rule ABySS:
         abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k=$kSIZE in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
         """
 
+rule DiscovarDenovo:
+    input:
+        # comma separated list of input files
+    output:
+
+    conda:
+        "envs/discovar-denovo.yml"
+    shell:
+        "DiscovarDeNovo READS= OUTDIR="
+
+
 rule quast:
     input:
         soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
@@ -210,7 +231,7 @@ rule quast:
     params:
         outdir = "reports/QUAST/",
     conda:
-        "envs/Quast.yml"
+        "envs/QCenv.yml"
     shell:
         "quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
 

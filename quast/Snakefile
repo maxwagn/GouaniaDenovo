@@ -1,0 +1,65 @@
+import pandas as pd
+import numpy as np
+import os
+jn = os.path.join
+
+#snakemake -p --profile qsub_hs_test --keep-going --immediate-submit --use-conda
+#snakemake -np --dag | dot -Tsvg > dag.svg # draw dag graph
+
+
+## Config
+configfile: "../metaAndconfig/config.yaml"
+
+CHROMOSOMES = [str(i) for i in range(1,25) if i not in [23] ] # +  ['MT']
+
+sample_mt = pd.read_csv(config["sample_mt"],
+                                dtype=str, sep='\t').set_index("sequence_id", drop=False)
+sample_mt.drop_duplicates(inplace=True)
+n_samples = len(sample_mt)
+id_list = sample_mt["sequence_id"].tolist()
+#id_list = ["TESTFILE"]
+readnames = ["1P", "2P"]
+kmer_ext = ["lower", "upper", "optimal"]
+
+rule all:
+    input:
+        "../reports/QUAST_test/report.tsv"
+
+#rule DiscoVarPrep:
+#    input:
+#        f =
+#        r =
+#    output:
+#        bam = 
+#    shell:
+
+
+
+rule DiscovarDenovo:
+    input:
+        # comma separated list of input files
+    output:
+
+    conda:
+        "../envs/discovar-denovo.yml"
+    shell:
+        "DiscovarDeNovo READS= OUTDIR="
+
+
+rule quast:
+    input:
+        soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        #abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        ref = config['reference']['fasta'],
+        gff = config['reference']['gff']
+    output:
+        "../reports/QUAST_test/report.tsv"
+    params:
+        outdir = "../reports/QUAST_test/"
+    conda:
+        "../envs/QCenv.yml"
+    shell:
+        #"quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
+        "quast.py -o {output} {input.soapdenovo} -R {input.ref} -G {input.gff}"
+
+
