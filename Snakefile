@@ -38,10 +38,11 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
         #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
+        expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
         ###### QUAST #####
-        "reports/QUAST/report.tsv"
+        #"reports/QUAST/report.tsv"
 
 rule fastqc_raw:
     input:
@@ -188,7 +189,7 @@ rule ABySS:
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa",
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
+        #"assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
         outdir = "assemblies/{id}_ABySS/{kmer}KSize/",

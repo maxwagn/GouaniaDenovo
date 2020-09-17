@@ -49,7 +49,7 @@ rule DiscovarDenovo:
 rule quast:
     input:
         soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
-        #abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
         ref = config['reference']['fasta'],
         gff = config['reference']['gff']
     output:
