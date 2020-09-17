@@ -45,7 +45,6 @@ rule DiscovarDenovo:
     shell:
         "DiscovarDeNovo READS= OUTDIR="
 
-
 rule quast:
     input:
         soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
