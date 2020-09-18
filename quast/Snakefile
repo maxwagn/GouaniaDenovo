@@ -23,42 +23,59 @@ kmer_ext = ["lower", "upper", "optimal"]
 
 rule all:
     input:
-        "../reports/QUAST_test/report.tsv"
+        #"../reports/QUAST_test/report.tsv"
+        #expand("../trimmed/bam/{id}_trim.bam", id = id_list)
+        expand("../assemblies/{id}_DISCOVAR/a.final.fasta", id = id_list[0])
 
-#rule DiscoVarPrep:
-#    input:
-#        f =
-#        r =
-#    output:
-#        bam = 
-#    shell:
+rule DiscoVarPrep:
+    input:
+        fRead = "../trimmed/{id}_1P_trim.fastq",
+        rRead = "../trimmed/{id}_2P_trim.fastq",
+    output:
+        bam = "../trimmed/bam/{id}_trim.bam"
+    threads: 24 
+    resources:
+        mem_gb = 150,
+        walltime = 48
+    conda:
+        "../envs/bamprep.yml"
+    shell:
+        "picard FastqToSam F1={input.fRead} F2={input.rRead} O={output.bam} SM={wildcards.id}" # RG=rg0013"
 
+#https://gatk.broadinstitute.org/hc/en-us/articles/360036351132-FastqToSam-Picard-
 
+#https://banana-slug.soe.ucsc.edu/contributors:team_5:discovar_de_novo_manual
 
 rule DiscovarDenovo:
     input:
-        # comma separated list of input files
+        bam = "../trimmed/bam/{id}_trim.bam"
     output:
-
+        "../assemblies/{id}_DISCOVAR/a.final.fasta"
+    params:
+        outdir = "../assemblies/{id}_DISCOVAR/",
+        logfile = "../assemblies/{id}_DISCOVAR/{id}_DISCOVAR.log"
+        #outID = "{id}_DISCOVAR"
+    threads: 16
     conda:
         "../envs/discovar-denovo.yml"
     shell:
-        "DiscovarDeNovo READS= OUTDIR="
+        "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} | tee {params.logfile}"
 
 rule quast:
     input:
         soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
         abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        ref = config['reference']['fasta'],
-        gff = config['reference']['gff']
+        #ref = config['reference']['fasta'],
+        #gff = config['reference']['gff']
     output:
         "../reports/QUAST_test/report.tsv"
     params:
         outdir = "../reports/QUAST_test/"
+    threads: 12
     conda:
         "../envs/QCenv.yml"
     shell:
         #"quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
-        "quast.py -o {output} {input.soapdenovo} -R {input.ref} -G {input.gff}"
+        "quast.py -o {params.outdir} {input.soapdenovo} {input.abyss} --threads {threads}" #-R {input.ref} -G {input.gff}"
 
 

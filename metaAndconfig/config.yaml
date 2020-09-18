@@ -11,6 +11,7 @@ report_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/Gouani
 
 ### If applicable for QUAST
 reference:
+    name: GCF_900634775.1_fGouWil2.1_genomic
     fasta: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata/reference/GCF_900634775.1_fGouWil2.1_genomic.fna.gz   
     gff: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata/reference/GCF_900634775.1_fGouWil2.1_genomic.gff
 

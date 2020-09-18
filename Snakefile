@@ -61,7 +61,7 @@ rule multiqc_raw:
     output:
         "reports/raw/multiqc_report.html"    
     conda:
-        "envs/QCenv.yml"
+        "envs/SoapDenovo.yml"
     shell:
         "multiqc ./reports/raw/ -o ./reports/raw/"
 
@@ -95,7 +95,7 @@ rule multiqc_trim:
     output:
         "reports/trim/multiqc_report.html"
     conda:
-        "envs/QCenv.yml"
+        "envs/SoapDenovo.yml"
     shell:
         "multiqc reports/trim/ -o reports/trim/"
 
@@ -234,7 +234,7 @@ rule quast:
     conda:
         "envs/QCenv.yml"
     shell:
-        "quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
+        "quast -o {params.outdir} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
 
 #rule SPADES:
 #    input:
