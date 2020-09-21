@@ -38,7 +38,7 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
         #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
+        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
         ###### SPAdes #####
         #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
         ###### QUAST #####
@@ -188,12 +188,12 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa",
+        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-scaffolds.fa",
         #"assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
         outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
-        name = "{id}_abyss_K{kmer}",
+        name = "{id}_abyss_{kmer}K",
         logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K.log"
     threads: 26 
     resources:

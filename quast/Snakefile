@@ -23,9 +23,9 @@ kmer_ext = ["lower", "upper", "optimal"]
 
 rule all:
     input:
-        #"../reports/QUAST_test/report.tsv"
         #expand("../trimmed/bam/{id}_trim.bam", id = id_list)
-        expand("../assemblies/{id}_DISCOVAR/a.final.fasta", id = id_list[0])
+        expand("../assemblies/{id}_DISCOVAR/a.fasta", id = id_list[4])
+        #"../reports/QUASTcontigs/report.tsv"
 
 rule DiscoVarPrep:
     input:
@@ -36,7 +36,7 @@ rule DiscoVarPrep:
     threads: 24 
     resources:
         mem_gb = 150,
-        walltime = 48
+        walltime = 12
     conda:
         "../envs/bamprep.yml"
     shell:
@@ -50,32 +50,61 @@ rule DiscovarDenovo:
     input:
         bam = "../trimmed/bam/{id}_trim.bam"
     output:
-        "../assemblies/{id}_DISCOVAR/a.final.fasta"
+        "../assemblies/{id}_DISCOVAR/a.fasta"
     params:
         outdir = "../assemblies/{id}_DISCOVAR/",
         logfile = "../assemblies/{id}_DISCOVAR/{id}_DISCOVAR.log"
         #outID = "{id}_DISCOVAR"
-    threads: 16
+    threads: 24
+    resources:
+        mem_gb = 220,
+        walltime = 12
     conda:
         "../envs/discovar-denovo.yml"
     shell:
-        "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} | tee {params.logfile}"
+        "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} MAX_MEM_GB={resources.mem_gb} TEE={params.logfile}"
 
-rule quast:
+rule renameDIscovar:
+    input:
+        "../assemblies/{id}_DISCOVAR/a.fasta"
+    output:
+        "../assemblies/{id}_DISCOVAR/{id}_discovar.fasta"
+    shell:
+        "cp {input} {output}"
+
+rule quast_contigs_summary:
     input:
         soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
         abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        #ref = config['reference']['fasta'],
-        #gff = config['reference']['gff']
+        discovar = expand("../assemblies/{id}_DISCOVAR/{id}_discovar.fasta", id = id_list)
     output:
-        "../reports/QUAST_test/report.tsv"
+        "../reports/QUASTcontigs/report.tsv"
     params:
-        outdir = "../reports/QUAST_test/"
+        outdir = "../reports/QUASTcontigs/"
     threads: 12
     conda:
         "../envs/QCenv.yml"
     shell:
-        #"quast -o {output} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
         "quast.py -o {params.outdir} {input.soapdenovo} {input.abyss} --threads {threads}" #-R {input.ref} -G {input.gff}"
+
+rule extract_best_N50_contigs:
+    input:
+        "../reports/QUASTcontigs/report.tsv"
+    output:
+        "../"
+
+
+
+
+#rule RagTag:
+    #input:
+        #soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        #abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        #discovar = expand("../assemblies/{id}_DISCOVAR/{id}_discovar.fasta", id = id_list)
+    #output:
+
+
+
+
 
 
