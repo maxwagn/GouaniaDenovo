@@ -5,3 +5,4 @@ reports/raw
 reports/trim
 trash/
 reports/QUAST_test/
+reports/QUASTcontigs*

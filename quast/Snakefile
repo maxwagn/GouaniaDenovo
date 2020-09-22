@@ -24,8 +24,8 @@ kmer_ext = ["lower", "upper", "optimal"]
 rule all:
     input:
         #expand("../trimmed/bam/{id}_trim.bam", id = id_list)
-        expand("../assemblies/{id}_DISCOVAR/a.fasta", id = id_list[4])
-        #"../reports/QUASTcontigs/report.tsv"
+        #expand("../assemblies/{id}_DISCOVAR/a.final/a.fasta", id = id_list)
+        "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
 
 rule DiscoVarPrep:
     input:
@@ -50,15 +50,15 @@ rule DiscovarDenovo:
     input:
         bam = "../trimmed/bam/{id}_trim.bam"
     output:
-        "../assemblies/{id}_DISCOVAR/a.fasta"
+        "../assemblies/{id}_DISCOVAR/a.final/a.fasta"
     params:
         outdir = "../assemblies/{id}_DISCOVAR/",
         logfile = "../assemblies/{id}_DISCOVAR/{id}_DISCOVAR.log"
         #outID = "{id}_DISCOVAR"
     threads: 24
     resources:
-        mem_gb = 220,
-        walltime = 12
+        mem_gb = 210,
+        walltime = 48
     conda:
         "../envs/discovar-denovo.yml"
     shell:
@@ -66,33 +66,42 @@ rule DiscovarDenovo:
 
 rule renameDIscovar:
     input:
-        "../assemblies/{id}_DISCOVAR/a.fasta"
+        "../assemblies/{id}_DISCOVAR/a.final/a.fasta"
     output:
-        "../assemblies/{id}_DISCOVAR/{id}_discovar.fasta"
+        "../assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta"
     shell:
         "cp {input} {output}"
 
 rule quast_contigs_summary:
     input:
-        soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
-        abyss = expand("../assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        discovar = expand("../assemblies/{id}_DISCOVAR/{id}_discovar.fasta", id = id_list)
+        soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        abyss = expand("../assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        discovar = expand("../assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list[4])
     output:
-        "../reports/QUASTcontigs/report.tsv"
+        "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
     params:
-        outdir = "../reports/QUASTcontigs/"
+        outdir = "../reports/QUASTcontigs_finalTest/"
     threads: 12
     conda:
         "../envs/QCenv.yml"
     shell:
-        "quast.py -o {params.outdir} {input.soapdenovo} {input.abyss} --threads {threads}" #-R {input.ref} -G {input.gff}"
+        "quast.py -o {params.outdir} {input.soapdenovo} {input.abyss} {input.discovar} --threads {threads}" #-R {input.ref} -G {input.gff}"
 
-rule extract_best_N50_contigs:
+rule extract_best_N50_contigs_for_BUSCO:
     input:
-        "../reports/QUASTcontigs/report.tsv"
+        quast_report = "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
     output:
-        "../"
+        SOAP = "../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
+        ABYSS = "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
+        DISCOVAR = "../metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
+    params:
+        #pwd = os.getcwd(),
+        metadata = config["sample_mt"],
+        outdir = "../metaAndconfig/bestN50/"
+    shell:
+        "python ../scripts/gethighestN50.py {wilcards.id} {params.metadata} {input.quast_reports} {params.outdir}"
 
+#rule BUSCO_on_best_CONTIGS:
 
 
 

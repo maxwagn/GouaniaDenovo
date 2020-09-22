@@ -23,7 +23,6 @@ kmer_ext = ["lower", "upper", "optimal"]
 
 rule all:
     input:
-        #expand("reports/raw/{illset']['id']ud}_{read}_fastqc.html", id = id_list, read = readnames), 
         #expand("reports/trim/{id}_{read}_trim_fastqc.html", id = id_list, read = readnames)
         #"reports/raw/multiqc_report.html",
         #"reports/trim/multiqc_report.html"
@@ -35,14 +34,12 @@ rule all:
         #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
         #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
         ###### SOAP DENOVO ######
-        #expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
+        #expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
-        #expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
-        ###### SPAdes #####
-        #expand("assemblies/{id}_SPAdes/scaffolds.fasta", id = id_list[0])
+        #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
+        expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
         ###### QUAST #####
-        "reports/QUAST/report.tsv"
+        #"reports/QUAST/report.tsv"
 
 rule fastqc_raw:
     input:
@@ -155,11 +152,11 @@ rule soapdenovo:
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
     output:
         # get info about all outpufiles here: https://www.animalgenome.org/bioinfo/resources/manuals/SOAP.html
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq",
-        "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafStatistics"
+        "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq",
+        "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafStatistics"
     threads: 26 
     params:
-        outdir = "assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K",
+        outdir = "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K",
         #config = "metaAndconfig/soapconfig/{id}_soapconfig"
     conda:
         "envs/SoapDenovo.yml"
@@ -188,13 +185,13 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-scaffolds.fa",
+        "assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa",
         #"assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
-        outdir = "assemblies/{id}_ABySS/{kmer}KSize/",
+        outdir = "assemblies/{id}_ABySS/",
         name = "{id}_abyss_{kmer}K",
-        logfile = "assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K.log"
+        logfile = "assemblies/{id}_ABySS/{id}_abyss_{kmer}K.log"
     threads: 26 
     resources:
         mem_gb = 200,
@@ -206,7 +203,7 @@ rule ABySS:
         file={input.ksize}
         kSIZE=$(cat "$file")
         echo $kSIZE
-        export TMPDIR={params.pwd}/{params.outdir}tmp
+        export TMPDIR={params.pwd}/{params.name}-tmp
         abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k=$kSIZE in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
         """
 
