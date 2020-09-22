@@ -37,9 +37,10 @@ rule all:
         #expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
         ###### ABySS ######
         #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
-        expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
+        #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
         ###### QUAST #####
         #"reports/QUAST/report.tsv"
+        "metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt", id = "TESTFILE", kmer = kmer_ext
 
 rule fastqc_raw:
     input:
@@ -107,6 +108,21 @@ rule soap_config:
         soapconfig = "metaAndconfig/soapconfig/{id}_soapconfig"
     shell:
         "python3 scripts/writesoapconfig.py {output.soapconfig} {input.fRead} {input.rRead}"
+
+rule DiscoVarPrep:
+    input:
+        fRead = "trimmed/{id}_1P_trim.fastq",
+        rRead = "trimmed/{id}_2P_trim.fastq",
+    output:
+        bam = "trimmed/bam/{id}_trim.bam"
+    threads: 24
+    resources:
+        mem_gb = 150,
+        walltime = 12
+    conda:
+        "envs/bamprep.yml"
+    shell:
+        "picard FastqToSam F1={input.fRead} F2={input.rRead} O={output.bam} SM={wildcards.id}" # RG=rg0013"
 
 rule KmerGenie_prep:
     input:
@@ -209,46 +225,61 @@ rule ABySS:
 
 rule DiscovarDenovo:
     input:
-        # comma separated list of input files
+        bam = "trimmed/bam/{id}_trim.bam"
     output:
-
+        "assemblies/{id}_DISCOVAR/a.final/a.fasta"
+    params:
+        outdir = "assemblies/{id}_DISCOVAR/",
+        logfile = "assemblies/{id}_DISCOVAR/{id}_DISCOVAR.log"
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
     conda:
         "envs/discovar-denovo.yml"
     shell:
-        "DiscovarDeNovo READS= OUTDIR="
+        "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} MAX_MEM_GB={resources.mem_gb} TEE={params.logfile}"
 
-
-rule quast:
+rule renameDIscovar:
     input:
-        soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{kmer}KSize/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
-        abyss = expand("assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_K{kmer}-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        ref = config['reference']['fasta'],
-        gff = config['reference']['gff']
+        "assemblies/{id}_DISCOVAR/a.final/a.fasta"
     output:
-        "reports/QUAST/report.tsv"
+        "assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta"
+    shell:
+        "cp {input} {output}"
+
+rule quast_contigs_summary:
+    input:
+        soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        abyss = expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        discovar = expand("assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list[4])
+    output:
+        "reports/QUASTcontigs_finalTest/transposed_report.tsv"
     params:
-        outdir = "reports/QUAST/",
+        outdir = "reports/QUASTcontigs_finalTest/"
+    threads: 12
     conda:
         "envs/QCenv.yml"
     shell:
-        "quast -o {params.outdir} {input.soapdenovo} {input.abyss} -R {input.ref} -G {input.gff}"
+        "quast.py -o {params.outdir} {input.soapdenovo} {input.abyss} {input.discovar} --threads {threads}" #-R {input.ref} -G {input.gff}"
 
-#rule SPADES:
-#    input:
-#        fRead = "trimmed/{id}_1P_trim.fastq",
-#        rRead = "trimmed/{id}_2P_trim.fastq"
-#    output: 
-#        "assemblies/{id}_SPAdes/scaffolds.fasta"
-#    threads: 28
-#    params:
-#        outdir = "assemblies/{id}_SPAdes/",
-#        mem_limit = 200
-#    resources:
-#        mem_gb = 220,
-#        walltime = 72
-#    conda:
-#        "envs/SPADES.yml"
-#    shell:
-#        "spades.py -1 {input.fRead} -2 {input.rRead} --careful --cov-cutoff 'auto' -o {params.outdir} -t {threads} -m {params.mem_limit}"
+rule extract_best_N50_contigs_for_BUSCO:
+    input:
+        quast_report = "reports/QUASTcontigs_finalTest/transposed_report.tsv"
+    output:
+        SOAP = "metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
+        ABYSS = "metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
+        DISCOVAR = "metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
+    params:
+        #pwd = os.getcwd(),
+        metadata = config["sample_mt"],
+        outdir = "metaAndconfig/bestN50/"
+    shell:
+        "python scripts/gethighestN50.py {wilcards.id} {params.metadata} {input.quast_reports} {params.outdir}"
+
+#rule BUSCO_contigs:
+    #input:
+
+
 
 
