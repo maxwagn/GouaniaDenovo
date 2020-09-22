@@ -25,7 +25,9 @@ rule all:
     input:
         #expand("../trimmed/bam/{id}_trim.bam", id = id_list)
         #expand("../assemblies/{id}_DISCOVAR/a.final/a.fasta", id = id_list)
-        "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        #"../reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        expand("../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt", id = id_list)
+
 
 rule DiscoVarPrep:
     input:
@@ -91,15 +93,16 @@ rule extract_best_N50_contigs_for_BUSCO:
     input:
         quast_report = "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
     output:
-        SOAP = "../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
-        ABYSS = "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
-        DISCOVAR = "../metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
+        "../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
+        "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
+        "../metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
     params:
         #pwd = os.getcwd(),
+        #iD = wildcards.id,
         metadata = config["sample_mt"],
         outdir = "../metaAndconfig/bestN50/"
     shell:
-        "python ../scripts/gethighestN50.py {wilcards.id} {params.metadata} {input.quast_reports} {params.outdir}"
+        "python ../scripts/gethighestN50.py {wildcards.id} {params.metadata} {input.quast_report} {params.outdir}"
 
 #rule BUSCO_on_best_CONTIGS:
 

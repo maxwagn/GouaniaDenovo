@@ -39,8 +39,7 @@ rule all:
         #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
         #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
         ###### QUAST #####
-        #"reports/QUAST/report.tsv"
-        "metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt", id = "TESTFILE", kmer = kmer_ext
+        #expand("metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt", id = id_list)
 
 rule fastqc_raw:
     input:
@@ -252,7 +251,7 @@ rule quast_contigs_summary:
     input:
         soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
         abyss = expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        discovar = expand("assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list[4])
+        discovar = expand("assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list)
     output:
         "reports/QUASTcontigs_finalTest/transposed_report.tsv"
     params:
@@ -275,7 +274,7 @@ rule extract_best_N50_contigs_for_BUSCO:
         metadata = config["sample_mt"],
         outdir = "metaAndconfig/bestN50/"
     shell:
-        "python scripts/gethighestN50.py {wilcards.id} {params.metadata} {input.quast_reports} {params.outdir}"
+        "python scripts/gethighestN50.py wilcards.id {params.metadata} {input.quast_reports} {params.outdir}"
 
 #rule BUSCO_contigs:
     #input:
