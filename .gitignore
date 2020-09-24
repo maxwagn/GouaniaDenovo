@@ -6,3 +6,7 @@ reports/trim
 trash/
 reports/QUAST_test/
 reports/QUASTcontigs_finalTest/
+quast/busco*
+metaAndconfig/bestN50/
+reports/BUSCO/
+reports/QUASTcontigs/

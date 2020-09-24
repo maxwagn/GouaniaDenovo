@@ -25,9 +25,12 @@ rule all:
     input:
         #expand("../trimmed/bam/{id}_trim.bam", id = id_list)
         #expand("../assemblies/{id}_DISCOVAR/a.final/a.fasta", id = id_list)
-        #"../reports/QUASTcontigs_finalTest/transposed_report.tsv"
-        expand("../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt", id = id_list)
-
+        #"../reports/QUASTcontigs/transposed_report.tsv"
+        #expand("../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt", id = id_list),
+        #expand("../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt", id = id_list),
+        expand("../reports/BUSCO/{{id}}_abyss_busco/{{id}}_abyss_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]), id = id_list),
+        expand("../reports/BUSCO/{{id}}_soap_busco/{{id}}_soap_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]), id = id_list)
+        #expand("../reports/BUSCO/{{id}}_discovar_busco/{{id}}_discovar_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]), id = id_list)
 
 rule DiscoVarPrep:
     input:
@@ -78,11 +81,11 @@ rule quast_contigs_summary:
     input:
         soapdenovo = expand("../assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
         abyss = expand("../assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
-        discovar = expand("../assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list[4])
+        discovar = expand("../assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list)
     output:
-        "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        "../reports/QUASTcontigs/transposed_report.tsv"
     params:
-        outdir = "../reports/QUASTcontigs_finalTest/"
+        outdir = "../reports/QUASTcontigs/"
     threads: 12
     conda:
         "../envs/QCenv.yml"
@@ -91,21 +94,84 @@ rule quast_contigs_summary:
 
 rule extract_best_N50_contigs_for_BUSCO:
     input:
-        quast_report = "../reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        "../reports/QUASTcontigs/transposed_report.tsv"
     output:
         "../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
-        "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
-        "../metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
+        "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt"
     params:
         #pwd = os.getcwd(),
         #iD = wildcards.id,
         metadata = config["sample_mt"],
         outdir = "../metaAndconfig/bestN50/"
     shell:
-        "python ../scripts/gethighestN50.py {wildcards.id} {params.metadata} {input.quast_report} {params.outdir}"
+        "python ../scripts/gethighestN50.py {wildcards.id} {params.metadata} {input} {params.outdir}"
 
-#rule BUSCO_on_best_CONTIGS:
+rule BUSCO_DISCOVAR:
+    input:
+        "../assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta"
+    output:
+        "../reports/BUSCO/{{id}}_discovar_busco/{{id}}_discovar_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]),
+        "../reports/BUSCO/{{id}}_discovar_busco/{{id}}_discovar_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"])
+    params:
+        outdir = "../reports/BUSCO/{id}_discovar_busco/",
+        mode = config["BUSCO"]["mode"],
+        lineage = config["BUSCO"]["lineage"]
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
+    conda:
+        "../envs/BUSCO.yml"
+    shell:
+        """
+        busco -i {input} -l {params.lineage} -o {wildcards.id}_discovar_busco --out_path {params.outdir} -m {params.mode} -c {threads} -f
+        """
 
+rule BUSCO_SOAP:
+    input:
+        "../metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
+    output:
+        "../reports/BUSCO/{{id}}_soap_busco/{{id}}_soap_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]),
+        "../reports/BUSCO/{{id}}_soap_busco/{{id}}_soap_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"])
+    params:
+        outdir = "../reports/BUSCO/{id}_soap_busco/",
+        mode = config["BUSCO"]["mode"],
+        lineage = config["BUSCO"]["lineage"]
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
+    conda:
+        "../envs/BUSCO.yml"
+    shell:
+        """
+        contigfile=$(cat {input})
+        echo Making BUSCO search on $contigfile
+        busco -i $contigfile -l {params.lineage} -o {wildcards.id}_soap_busco --out_path {params.outdir} -m {params.mode} -c {threads} -f 
+        """
+
+rule BUSCO_ABYSS:
+    input:
+        "../metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt"
+    output:
+        "../reports/BUSCO/{{id}}_abyss_busco/{{id}}_abyss_busco/run_{}/full_table.tsv".format(config["BUSCO"]["lineage"]),
+        "../reports/BUSCO/{{id}}_abyss_busco/{{id}}_abyss_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"])
+    params:
+        outdir = "../reports/BUSCO/{id}_abyss_busco/",
+        mode = config["BUSCO"]["mode"],
+        lineage = config["BUSCO"]["lineage"]
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
+    conda:
+        "../envs/BUSCO.yml"
+    shell:
+        """
+        contigfile=$(cat {input})
+        echo Making BUSCO search on $contigfile
+        busco -i $contigfile -l {params.lineage} -o {wildcards.id}_discovar_busco --out_path {params.outdir} -m {params.mode} -c {threads} -f
+        """
 
 
 #rule RagTag:

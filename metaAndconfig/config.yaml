@@ -33,3 +33,9 @@ pair_num_cutoff: 3
 #minimum aligned length to contigs for a reliable read location (at least 32 for short insert size)
 map_len: 32
 
+
+# BUSCO configurations:
+BUSCO:
+    mode: genome # -m or --mode sets the assessment MODE: genome, proteins, transcriptome
+    lineage: actinopterygii_odb10 # to get a full list of lineages use busco --list-datasets
+

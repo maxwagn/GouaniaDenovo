@@ -43,6 +43,6 @@ with open('{}{}_ABYSS_highestN50.txt'.format(outputdir, ID), "w") as abyssoutfil
     AbyssmaxN50 = AbyssDataFrame['N50'].idxmax()
     abyssoutfile.write("../assemblies/{}_ABySS/{}_abyss_{}-scaffolds.fa".format(ID, ID, AbyssmaxN50))
 
-with open('{}{}_DISCOVAR_highestN50.txt'.format(outputdir, ID), "w") as discovaroutfile:
-    DiscovarDataFrame = report[report['software'] == 'discovar']
-    discovaroutfile.write("../assemblies/{}_DISCOVAR/a.final/{}_discovar.fasta".format(ID, ID))
+#with open('{}{}_DISCOVAR_highestN50.txt'.format(outputdir, ID), "w") as discovaroutfile:
+#    DiscovarDataFrame = report[report['software'] == 'discovar']
+#    discovaroutfile.write("../assemblies/{}_DISCOVAR/a.final/{}_discovar.fasta".format(ID, ID))
