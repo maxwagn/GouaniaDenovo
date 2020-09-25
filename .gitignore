@@ -10,3 +10,6 @@ quast/busco*
 metaAndconfig/bestN50/
 reports/BUSCO/
 reports/QUASTcontigs/
+RagTag/
+reports/BUSCO_contigs/
+reports/QUAST_contigs/
