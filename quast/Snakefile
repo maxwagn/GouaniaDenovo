@@ -28,8 +28,8 @@ rule all:
         #expand("../assemblies/{id}_DISCOVAR/a.final/a.fasta", id = id_list)
         #expand("../metaAndconfig/bestN50/{id}_{assembler}_highestN50.txt", id = id_list, assembler = assembly),
         #expand("../RagTag/{id}_{assembler}_ragtag/{id}_ragtag.scaffolds.fasta", id = id_list[0], assembler = assembly)
-        expand("../reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
-        #expand("../RagTag/{id}_{assembler}_ragtag/{id}_{assembler}_ragtag.scaffolds.fasta", id = id_list, assembler = assembly)
+        #expand("../reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
+        expand("../RagTag/{id}_{assembler}_ragtag/{id}_{assembler}_ragtag.scaffolds.fasta", id = id_list, assembler = assembly)
 
 
 rule DiscoVarPrep:
