@@ -1,2 +1,2 @@
 # GouaniaDenovo
-<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag.svg">
+<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag_graphs/dag_new.svg">

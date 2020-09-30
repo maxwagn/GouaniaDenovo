@@ -5,11 +5,9 @@
 # one row per sample. It can be parsed easily via pandas.
 
 sample_mt: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/metaAndconfig/Gouania_deNovo_26082020.tsv
-ana_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/analyses
-raw_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/rawdata
-report_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/reports
+raw_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata
 
-### If applicable for QUAST
+## If applicable for QUAST
 reference:
     name: GCF_900634775.1_fGouWil2.1_genomic
     fasta: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata/reference/GCF_900634775.1_fGouWil2.1_genomic.fna.gz   

@@ -6,7 +6,6 @@ jn = os.path.join
 #snakemake -p --profile qsub_hs_test --keep-going --immediate-submit --use-conda
 #snakemake -np --dag | dot -Tsvg > dag.svg # draw dag graph
 
-
 ## Config
 configfile: "metaAndconfig/config.yaml"
 
@@ -16,34 +15,24 @@ sample_mt = pd.read_csv(config["sample_mt"],
                                 dtype=str, sep='\t').set_index("sequence_id", drop=False)
 sample_mt.drop_duplicates(inplace=True)
 n_samples = len(sample_mt)
-id_list = sample_mt["sequence_id"].tolist()
-#id_list = ["TESTFILE"]
+#id_list = sample_mt["sequence_id"].tolist()
+id_list = ["TESTFILE"]
 readnames = ["1P", "2P"]
 kmer_ext = ["lower", "upper", "optimal"]
+assembly = ["SOAP", "ABYSS", "DISCOVAR"]
 
 rule all:
     input:
-        #expand("reports/trim/{id}_{read}_trim_fastqc.html", id = id_list, read = readnames)
-        #"reports/raw/multiqc_report.html",
-        #"reports/trim/multiqc_report.html"
-        #expand("metaAndconfig/soapconfig/{id}_soapconfig", id = id_list)
-        ##### KmerGenie #####
-        #expand("metaAndconfig/KmerGenie/{id}_KmerGenie.config", id = id_list)
-        #expand("reports/KmerGenie/{id}_report.html", id = id_list)
-        #expand("metaAndconfig/KmerGenie/{id}_lowerK.config", id = id_list),
-        #expand("metaAndconfig/KmerGenie/{id}_upperK.config", id = id_list),
-        #expand("metaAndconfig/KmerGenie/{id}_optimalK.config", id = id_list)
-        ###### SOAP DENOVO ######
-        #expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafStatistics", id = id_list,  kmer = kmer_ext)
-        ###### ABySS ######
-        #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-stats.csv", id = id_list[1:],  kmer = kmer_ext)
-        #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list[1:],  kmer = kmer_ext)
-        ###### QUAST #####
-        #expand("metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt", id = id_list)
+        "reports/raw/multiqc_report.html",
+        "reports/trim/multiqc_report.html",
+        "reports/QUAST_contigs/transposed_report.tsv",
+        "reports/QUAST_RAGTAG/transposed_report.tsv",
+        expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
+        expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
 
 rule fastqc_raw:
     input:
-        fastq = "../../rawdata/{id}_{read}.fastq"
+        fastq = "{}/{{id}}_{{read}}.fastq".format(config["raw_dir"])
     output:
         "reports/raw/{id}_{read}_fastqc.html",
         "reports/raw/{id}_{read}_fastqc.zip"
@@ -64,8 +53,8 @@ rule multiqc_raw:
 
 rule trimmomatic:
     input:
-        f = "../../rawdata/{id}_1P.fastq",
-        r = "../../rawdata/{id}_2P.fastq"
+        f = "{}/{{id}}_1P.fastq".format(config["raw_dir"]),
+        r = "{}/{{id}}_2P.fastq".format(config["raw_dir"])
     output:
         fout = "trimmed/{id}_1P_trim.fastq",
         funp = "trimmed/{id}_1P_unpaired.fastq",
@@ -96,9 +85,6 @@ rule multiqc_trim:
     shell:
         "multiqc reports/trim/ -o reports/trim/"
 
-
-#https://hcc.unl.edu/docs/applications/app_specific/bioinformatics_tools/de_novo_assembly_tools/soapdenovo2/
-
 rule soap_config:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
@@ -111,7 +97,7 @@ rule soap_config:
 rule DiscoVarPrep:
     input:
         fRead = "trimmed/{id}_1P_trim.fastq",
-        rRead = "trimmed/{id}_2P_trim.fastq",
+        rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         bam = "trimmed/bam/{id}_trim.bam"
     threads: 24
@@ -121,7 +107,7 @@ rule DiscoVarPrep:
     conda:
         "envs/bamprep.yml"
     shell:
-        "picard FastqToSam F1={input.fRead} F2={input.rRead} O={output.bam} SM={wildcards.id}" # RG=rg0013"
+        "picard FastqToSam F1={input.fRead} F2={input.rRead} O={output.bam} SM={wildcards.id}"
 
 rule KmerGenie_prep:
     input:
@@ -133,7 +119,6 @@ rule KmerGenie_prep:
         "ls -1 {input.f} {input.r} > {output}"
 
 rule KmerGenie:
-    #https://onestopdataanalysis.com/estimate-genome-size-best-k-mer-size-for-assembly/
     input:
         readlist = "metaAndconfig/KmerGenie/{id}_KmerGenie.config" 
     output:
@@ -239,7 +224,7 @@ rule DiscovarDenovo:
     shell:
         "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} MAX_MEM_GB={resources.mem_gb} TEE={params.logfile}"
 
-rule renameDIscovar:
+rule renameDiscovar:
     input:
         "assemblies/{id}_DISCOVAR/a.final/a.fasta"
     output:
@@ -247,15 +232,16 @@ rule renameDIscovar:
     shell:
         "cp {input} {output}"
 
+
 rule quast_contigs_summary:
     input:
         soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
         abyss = expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
         discovar = expand("assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list)
     output:
-        "reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        "reports/QUAST_contigs/transposed_report.tsv"
     params:
-        outdir = "reports/QUASTcontigs_finalTest/"
+        outdir = "reports/QUAST_contigs/"
     threads: 12
     conda:
         "envs/QCenv.yml"
@@ -264,20 +250,95 @@ rule quast_contigs_summary:
 
 rule extract_best_N50_contigs_for_BUSCO:
     input:
-        quast_report = "reports/QUASTcontigs_finalTest/transposed_report.tsv"
+        "reports/QUAST_contigs/transposed_report.tsv"
     output:
-        SOAP = "metaAndconfig/bestN50/{id}_SOAP_highestN50.txt",
-        ABYSS = "metaAndconfig/bestN50/{id}_ABYSS_highestN50.txt",
-        DISCOVAR = "metaAndconfig/bestN50/{id}_DISCOVAR_highestN50.txt"
+        "metaAndconfig/bestN50/{id}_{assembler}_highestN50.txt"
     params:
-        #pwd = os.getcwd(),
         metadata = config["sample_mt"],
         outdir = "metaAndconfig/bestN50/"
     shell:
-        "python scripts/gethighestN50.py wilcards.id {params.metadata} {input.quast_reports} {params.outdir}"
+        "python scripts/gethighestN50.py {wildcards.id} {params.metadata} {input} {params.outdir}"
 
-#rule BUSCO_contigs:
-    #input:
+rule BUSCO_contigs:
+    input:
+        "metaAndconfig/bestN50/{id}_{assembler}_highestN50.txt"
+    output:
+        "reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"])
+    params:
+        outdir = "reports/BUSCO_contigs/",
+        mode = config["BUSCO"]["mode"],
+        lineage = config["BUSCO"]["lineage"],
+        ids = "{id}_{assembler}_busco"
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
+    conda:
+        "envs/BUSCO.yml"
+    shell:
+        """
+        contigfile=$(cat {input})
+        echo Making BUSCO search on $contigfile
+        busco -i $contigfile -l {params.lineage} -o {params.ids} --out_path {params.outdir} -m {params.mode} -c {threads} -f
+        """
+
+rule RagTag:
+    input:
+        query = "metaAndconfig/bestN50/{id}_{assembler}_highestN50.txt",
+        ref = config["reference"]["fasta"]
+    output:
+        "RagTag/{id}_{assembler}_ragtag/{id}_{assembler}_ragtag.scaffolds.fasta"
+    params:
+        id = {id},
+        outdir = "RagTag/{id}_{assembler}_ragtag/"
+    threads: 24
+    resources:
+        mem_gb = 200,
+        walltime = 2
+    conda:
+        "envs/RagTag.yml"
+    shell:
+        """
+        contigfile=$(cat {input.query})
+        echo Conducting RagTag correction on $contigfile
+        ragtag.py correct {input.ref} $contigfile -o {params.outdir} -t {threads}
+        filename=$(basename $(cat {input.query}) | awk -F "." '{{print $1".corrected.fasta"}}')
+        ragtag.py scaffold {input.ref} {params.outdir}$filename -o {params.outdir} -t {threads}
+        mv {params.outdir}ragtag.scaffolds.fasta {output}
+        """
+
+rule quast_RagTag:
+    input:
+        expand("RagTag/{id}_{assembler}_ragtag/{id}_{assembler}_ragtag.scaffolds.fasta", id = id_list, assembler = assembly)
+    output:
+        "reports/QUAST_RAGTAG/transposed_report.tsv"
+    params:
+        outdir = "reports/QUAST_RAGTAG/"
+    threads: 12
+    conda:
+        "envs/QCenv.yml"
+    shell:
+        "quast.py -o {params.outdir} {input} --threads {threads}"
+
+
+rule BUSCO_RagTag_scaffolds:
+    input:
+        "RagTag/{id}_{assembler}_ragtag/{id}_{assembler}_ragtag.scaffolds.fasta"
+    output:
+        "reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"])
+    params:
+        outdir = "reports/BUSCO_RagTag_scaffolds/",
+        mode = config["BUSCO"]["mode"],
+        lineage = config["BUSCO"]["lineage"],
+        ids = "{id}_{assembler}_RagTag_busco"
+    threads: 24
+    resources:
+        mem_gb = 210,
+        walltime = 48
+    conda:
+        "envs/BUSCO.yml"
+    shell:
+        "busco -i {input} -l {params.lineage} -o {params.ids} --out_path {params.outdir} -m {params.mode} -c {threads} -f"
 
 
 
