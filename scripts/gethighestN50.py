@@ -3,9 +3,7 @@ import pandas as pd
 
 
 ####### IMPORTANT CHANGE LATER 
-####### "soapoutfile.write('../assemblies/{}_SOAPDENOVO/{}_soap_{}.scafSeq'.format(ID, ID, SOAPmaxN50))"
-####### TO
-####### "soapoutfile.write('assemblies/{}_SOAPDENOVO/{}_soap_{}.scafSeq'.format(ID, ID, SOAPmaxN50))"
+####### Check if software list is correctly spelled!
 
 # usage: python gethighestN50.py <ID> <metadata> <quast_report_transposed> <outputdir>
 ID = sys.argv[1]
@@ -34,15 +32,15 @@ with open('{}{}_SOAP_highestN50.txt'.format(outputdir, ID), "w") as soapoutfile:
     SOAPDataFrame = SOAPDataFrame[SOAPDataFrame["ID"] == ID]
     SOAPDataFrame = SOAPDataFrame.set_index("ksize")
     SOAPmaxN50 = SOAPDataFrame['N50'].idxmax()
-    soapoutfile.write('../assemblies/{}_SOAPDENOVO/{}_soap_{}.scafSeq'.format(ID, ID, SOAPmaxN50))
+    soapoutfile.write('assemblies/{}_SOAPDENOVO/{}_soap_{}.scafSeq'.format(ID, ID, SOAPmaxN50))
 
 with open('{}{}_ABYSS_highestN50.txt'.format(outputdir, ID), "w") as abyssoutfile:
     AbyssDataFrame = report[report['software'] == 'abyss']
     AbyssDataFrame = AbyssDataFrame[AbyssDataFrame["ID"] == ID]
     AbyssDataFrame = AbyssDataFrame.set_index("ksize")
     AbyssmaxN50 = AbyssDataFrame['N50'].idxmax()
-    abyssoutfile.write("../assemblies/{}_ABySS/{}_abyss_{}-scaffolds.fa".format(ID, ID, AbyssmaxN50))
+    abyssoutfile.write("assemblies/{}_ABySS/{}_abyss_{}-scaffolds.fa".format(ID, ID, AbyssmaxN50))
 
 with open('{}{}_DISCOVAR_highestN50.txt'.format(outputdir, ID), "w") as discovaroutfile:
     DiscovarDataFrame = report[report['software'] == 'discovar']
-    discovaroutfile.write("../assemblies/{}_DISCOVAR/a.final/{}_discovar.fasta".format(ID, ID))
+    discovaroutfile.write("assemblies/{}_DISCOVAR/a.final/{}_discovar.fasta".format(ID, ID))

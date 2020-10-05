@@ -26,9 +26,10 @@ rule all:
         "reports/raw/multiqc_report.html",
         "reports/trim/multiqc_report.html",
         "reports/QUAST_contigs/transposed_report.tsv",
-        "reports/QUAST_RAGTAG/transposed_report.tsv",
-        expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
-        expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
+        #"reports/QUAST_RAGTAG/transposed_report.tsv",
+        #expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
+        #expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
+        "reports/final/BUSCOandQUAST_summary_final.tsv"
 
 rule fastqc_raw:
     input:
@@ -341,5 +342,26 @@ rule BUSCO_RagTag_scaffolds:
         "busco -i {input} -l {params.lineage} -o {params.ids} --out_path {params.outdir} -m {params.mode} -c {threads} -f"
 
 
+rule finalReportPrep:
+    input:
+        expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
+    output:
+        "reports/BUSCO_RagTag_scaffolds/BUSCO_report_AllinOne.txt"
+    shell:
+        """
+        cat {input} >> {output}
+        """
 
+rule finalReport:
+    input:
+        busco = "reports/BUSCO_RagTag_scaffolds/BUSCO_report_AllinOne.txt",
+        quast = "reports/QUAST_RAGTAG/transposed_report.tsv"
+    output:
+        "reports/final/QUAST_summary_PLOT.pdf",
+        "reports/final/BUSCO_summary_PLOT.pdf",
+        "reports/final/BUSCOandQUAST_summary_final.tsv"
+    params:
+        metadata = config["sample_mt"]
+    shell:
+        "python scripts/mergeBUSCO_QUAST.py {input.busco} {input.quast} {params.metadata}"
 

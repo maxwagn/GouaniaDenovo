@@ -15,4 +15,5 @@ reports/BUSCO_contigs/
 reports/BUSCO_RagTag_scaffolds/
 reports/QUAST_RAGTAG/
 pipelinePT2/
+reports/downloads/
 reports/QUAST_contigs/
