@@ -26,6 +26,7 @@ rule all:
         "reports/raw/multiqc_report.html",
         "reports/trim/multiqc_report.html",
         "reports/QUAST_contigs/transposed_report.tsv",
+        expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
         "reports/final/BUSCOandQUAST_summary_final.tsv"
 
 rule fastqc_raw:
@@ -348,7 +349,6 @@ rule BUSCO_RagTag_scaffolds:
     shell:
         "busco -i {input} -l {params.lineage} -o {params.ids} --out_path {params.outdir} -m {params.mode} -c {threads} -f"
 
-
 rule finalReportPrep:
     input:
         expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
@@ -356,7 +356,6 @@ rule finalReportPrep:
         "reports/BUSCO_RagTag_scaffolds/BUSCO_report_AllinOne.txt"
     shell:
         "cat {input} >> {output}"
-
 
 rule finalReport:
     input:
