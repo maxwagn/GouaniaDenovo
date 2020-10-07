@@ -26,9 +26,6 @@ rule all:
         "reports/raw/multiqc_report.html",
         "reports/trim/multiqc_report.html",
         "reports/QUAST_contigs/transposed_report.tsv",
-        #"reports/QUAST_RAGTAG/transposed_report.tsv",
-        #expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
-        #expand("reports/BUSCO_RagTag_scaffolds/{{id}}_{{assembler}}_RagTag_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly)
         "reports/final/BUSCOandQUAST_summary_final.tsv"
 
 rule fastqc_raw:
@@ -39,8 +36,12 @@ rule fastqc_raw:
         "reports/raw/{id}_{read}_fastqc.zip"
     conda:
         "envs/QCenv.yml"
+    threads: config["resources"]["fastqc"]["threads"]
+    resources:
+        mem_gb = config["resources"]["fastqc"]["mem_gb"],
+        walltime = config["resources"]["fastqc"]["walltime"]
     shell: 
-        "fastqc -o ./reports/raw/ {input.fastq}"
+        "fastqc -o ./reports/raw/ {input.fastq} -t {threads}"
 
 rule multiqc_raw:
     input:
@@ -61,7 +62,12 @@ rule trimmomatic:
         funp = "trimmed/{id}_1P_unpaired.fastq",
         rout = "trimmed/{id}_2P_trim.fastq",
         runp = "trimmed/{id}_2P_unpaired.fastq"
-    threads: 8
+    threads: config["resources"]["trimmomatic"]["threads"]
+    resources:
+        mem_gb = config["resources"]["trimmomatic"]["mem_gb"],
+        walltime = config["resources"]["trimmomatic"]["walltime"]
+    conda:
+        "envs/SoapDenovo.yml"
     shell:
         "trimmomatic PE -threads {threads} {input.f} {input.r} {output.fout} {output.funp} {output.rout} {output.runp} ILLUMINACLIP:adapterseq/Adapters_PE.fa:2:30:10: LEADING:30 TRAILING:30 SLIDINGWINDOW:4:15 MINLEN:80"
 
@@ -73,6 +79,10 @@ rule fastqc_trim:
         "reports/trim/{id}_{read}_trim_fastqc.zip"
     conda:
         "envs/QCenv.yml"
+    threads: config["resources"]["fastqc"]["threads"]
+    resources:
+        mem_gb = config["resources"]["fastqc"]["mem_gb"],
+        walltime = config["resources"]["fastqc"]["walltime"]
     shell:
         "fastqc -o reports/trim/ {input.fastq}"
 
@@ -101,10 +111,10 @@ rule DiscoVarPrep:
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
         bam = "trimmed/bam/{id}_trim.bam"
-    threads: 24
+    threads: config["resources"]["DiscoVar"]["threads"]
     resources:
-        mem_gb = 150,
-        walltime = 12
+        mem_gb = config["resources"]["DiscoVar"]["mem_gb"],
+        walltime = config["resources"]["DiscoVar"]["walltime"]
     conda:
         "envs/bamprep.yml"
     shell:
@@ -127,11 +137,10 @@ rule KmerGenie:
         logfile = "reports/KmerGenie/{id}_kmergenie.log"
     params:
         outdir = "reports/KmerGenie/{id}",
-        #logfile = "reports/KmerGenie/{id}_kmergenie.log"
-    threads: 14
+    threads: config["resources"]["KmerGenie"]["threads"]
     resources:
-        mem_gb = 400,
-        walltime = 48
+        mem_gb = config["resources"]["KmerGenie"]["mem_gb"],
+        walltime = config["resources"]["KmerGenie"]["walltime"]
     conda:
         "envs/KmerGenie.yml"
     shell:
@@ -152,18 +161,16 @@ rule soapdenovo:
         ksize = "metaAndconfig/KmerGenie/{id}_{kmer}K.config",
         config = "metaAndconfig/soapconfig/{id}_soapconfig"
     output:
-        # get info about all outpufiles here: https://www.animalgenome.org/bioinfo/resources/manuals/SOAP.html
         "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq",
         "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafStatistics"
-    threads: 26 
     params:
         outdir = "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K",
-        #config = "metaAndconfig/soapconfig/{id}_soapconfig"
     conda:
         "envs/SoapDenovo.yml"
+    threads: config["resources"]["SoapDenovo"]["threads"]
     resources:
-        mem_gb = 200,
-        walltime = 48 
+        mem_gb = config["resources"]["SoapDenovo"]["mem_gb"],
+        walltime = config["resources"]["SoapDenovo"]["walltime"] 
     shell:
         """
         file={input.ksize}
@@ -193,10 +200,10 @@ rule ABySS:
         outdir = "assemblies/{id}_ABySS/",
         name = "{id}_abyss_{kmer}K",
         logfile = "assemblies/{id}_ABySS/{id}_abyss_{kmer}K.log"
-    threads: 26 
+    threads: config["resources"]["ABySS"]["threads"]
     resources:
-        mem_gb = 200,
-        walltime = 48 
+        mem_gb = config["resources"]["ABySS"]["mem_gb"],
+        walltime = config["resources"]["ABySS"]["walltime"]
     conda:
         "envs/ABySS.yml"
     shell:
@@ -216,10 +223,10 @@ rule DiscovarDenovo:
     params:
         outdir = "assemblies/{id}_DISCOVAR/",
         logfile = "assemblies/{id}_DISCOVAR/{id}_DISCOVAR.log"
-    threads: 24
+    threads: config["resources"]["DiscoVar"]["threads"]
     resources:
-        mem_gb = 210,
-        walltime = 48
+        mem_gb = config["resources"]["DiscoVar"]["mem_gb"],
+        walltime = config["resources"]["DiscoVar"]["walltime"]
     conda:
         "envs/discovar-denovo.yml"
     shell:
@@ -243,7 +250,7 @@ rule quast_contigs_summary:
         "reports/QUAST_contigs/transposed_report.tsv"
     params:
         outdir = "reports/QUAST_contigs/"
-    threads: 12
+    threads: config["resources"]["QUAST"]["threads"]
     conda:
         "envs/QCenv.yml"
     shell:
@@ -270,10 +277,10 @@ rule BUSCO_contigs:
         mode = config["BUSCO"]["mode"],
         lineage = config["BUSCO"]["lineage"],
         ids = "{id}_{assembler}_busco"
-    threads: 24
+    threads: config["resources"]["BUSCO"]["threads"]
     resources:
-        mem_gb = 210,
-        walltime = 48
+        mem_gb = config["resources"]["BUSCO"]["mem_gb"],
+        walltime = config["resources"]["BUSCO"]["walltime"]
     conda:
         "envs/BUSCO.yml"
     shell:
@@ -292,10 +299,10 @@ rule RagTag:
     params:
         id = {id},
         outdir = "RagTag/{id}_{assembler}_ragtag/"
-    threads: 24
+    threads: config["resources"]["RagTag"]["threads"]
     resources:
-        mem_gb = 200,
-        walltime = 2
+        mem_gb = config["resources"]["RagTag"]["mem_gb"],
+        walltime = config["resources"]["RagTag"]["walltime"]
     conda:
         "envs/RagTag.yml"
     shell:
@@ -315,7 +322,7 @@ rule quast_RagTag:
         "reports/QUAST_RAGTAG/transposed_report.tsv"
     params:
         outdir = "reports/QUAST_RAGTAG/"
-    threads: 12
+    threads: config["resources"]["QUAST"]["threads"] 
     conda:
         "envs/QCenv.yml"
     shell:
@@ -332,10 +339,10 @@ rule BUSCO_RagTag_scaffolds:
         mode = config["BUSCO"]["mode"],
         lineage = config["BUSCO"]["lineage"],
         ids = "{id}_{assembler}_RagTag_busco"
-    threads: 24
+    threads: config["resources"]["BUSCO"]["threads"]
     resources:
-        mem_gb = 210,
-        walltime = 48
+        mem_gb = config["resources"]["BUSCO"]["mem_gb"],
+        walltime = config["resources"]["BUSCO"]["walltime"]
     conda:
         "envs/BUSCO.yml"
     shell:
@@ -348,9 +355,8 @@ rule finalReportPrep:
     output:
         "reports/BUSCO_RagTag_scaffolds/BUSCO_report_AllinOne.txt"
     shell:
-        """
-        cat {input} >> {output}
-        """
+        "cat {input} >> {output}"
+
 
 rule finalReport:
     input:

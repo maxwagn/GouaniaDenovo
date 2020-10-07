@@ -7,6 +7,42 @@
 sample_mt: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/snakemake/deNovo/metaAndconfig/Gouania_deNovo_26082020.tsv
 raw_dir: /scratch/antwerpen/grp/asvardal/projects/clingfishes/projects/GouaniaPhylogenomics/rawdata
 
+resources:
+    fastqc:
+        walltime: 3
+        mem_gb: 100
+        threads: 14
+    trimmomatic:
+        walltime: 12
+        mem_gb: 100
+        threads: 14
+    KmerGenie:
+        walltime: 48
+        mem_gb: 250
+        threads: 14
+    DiscoVar:
+        walltime: 48
+        mem_gb: 210
+        threads: 26
+    SoapDenovo:
+        walltime: 48
+        mem_gb: 200
+        threads: 26
+    ABySS:
+        walltime: 48
+        mem_gb: 200
+        threads: 26
+    QUAST:
+        threads: 12
+    BUSCO:
+        walltime: 48
+        mem_gb: 210
+        threads: 24
+    RagTag:
+        walltime: 2
+        mem_gb: 200
+        threads: 24
+
 ## If applicable for QUAST
 reference:
     name: GCF_900634775.1_fGouWil2.1_genomic
