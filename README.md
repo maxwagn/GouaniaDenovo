@@ -1,7 +1,10 @@
 # GouaniaDenovo
 
 ## Pipeline
-<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag_graphs/dag_new_final.svg">
+
+this pipeline runs now in the TESTFOLDER. The previous one (AByss_problems_Snakefile) several problems beacause one cannot write serveral abyss runs into the same directory
+
+<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag_graphs/dag_new_final2.svg">
 
 ## Final results
 

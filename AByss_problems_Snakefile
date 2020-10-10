@@ -15,8 +15,8 @@ sample_mt = pd.read_csv(config["sample_mt"],
                                 dtype=str, sep='\t').set_index("sequence_id", drop=False)
 sample_mt.drop_duplicates(inplace=True)
 n_samples = len(sample_mt)
-id_list = ["TESTFILE"]
 #id_list = sample_mt["sequence_id"].tolist()
+id_list = ["TESTFILE"]
 readnames = ["1P", "2P"]
 kmer_ext = ["lower", "upper", "optimal"]
 assembly = ["SOAP", "ABYSS", "DISCOVAR"]
@@ -28,8 +28,6 @@ rule all:
         "reports/QUAST_contigs/transposed_report.tsv",
         expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
         "reports/final/BUSCOandQUAST_summary_final.tsv"
-        ##### new stuff
-        #expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list, kmer = kmer_ext)
 
 rule fastqc_raw:
     input:
@@ -189,13 +187,6 @@ rule soapdenovo:
         echo "K-mer size has to be set between 1 and 127"
         fi
         """
-rule rename_copy_soapdenovo:
-    input:
-        "assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq",
-    output:
-        "assemblies/contigs/{id}_contigs_SOAP_{kmer}K.fasta",
-    shell:
-        "cp {input} {output}"
 
 rule ABySS:
     input:
@@ -203,13 +194,13 @@ rule ABySS:
         fRead = "trimmed/{id}_1P_trim.fastq",
         rRead = "trimmed/{id}_2P_trim.fastq"
     output:
-        "assemblies/{id}_ABySS/{id}_abyss_{kmer}K/{id}_abyss_{kmer}K-scaffolds.fa",
-        "assemblies/{id}_ABySS/{id}_abyss_{kmer}K/{id}_abyss_{kmer}K-stats.csv" 
+        "assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa",
+        #"assemblies/{id}_ABySS/{kmer}KSize/{id}_abyss_{kmer}K-stats.csv" 
     params:
         pwd = os.getcwd(),
-        outdir = "assemblies/{id}_ABySS/{id}_abyss_{kmer}K/",
+        outdir = "assemblies/{id}_ABySS/",
         name = "{id}_abyss_{kmer}K",
-        logfile = "assemblies/{id}_ABySS/{id}_abyss_{kmer}K/{id}_abyss_{kmer}K.log"
+        logfile = "assemblies/{id}_ABySS/{id}_abyss_{kmer}K.log"
     threads: config["resources"]["ABySS"]["threads"]
     resources:
         mem_gb = config["resources"]["ABySS"]["mem_gb"],
@@ -221,17 +212,9 @@ rule ABySS:
         file={input.ksize}
         kSIZE=$(cat "$file")
         echo $kSIZE
-        export TMPDIR={params.pwd}/{params.outdir}tmp
+        export TMPDIR={params.pwd}/{params.name}-tmp
         abyss-pe np={threads} -C {params.pwd}/{params.outdir} name={params.name} k=$kSIZE in='{params.pwd}/{input.fRead} {params.pwd}/{input.rRead}' | tee {params.logfile}
         """
-
-rule rename_copy_Abyss:
-    input:
-        "assemblies/{id}_ABySS/{id}_abyss_{kmer}K/{id}_abyss_{kmer}K-scaffolds.fa"
-    output:
-        "assemblies/contigs/{id}_contigs_ABYSS_{kmer}K.fasta"
-    shell:
-        "cp {input} {output}"
 
 rule DiscovarDenovo:
     input:
@@ -250,19 +233,20 @@ rule DiscovarDenovo:
     shell:
         "DiscovarDeNovo READS={input.bam} OUT_DIR={params.outdir} NUM_THREADS={threads} MAX_MEM_GB={resources.mem_gb} TEE={params.logfile}"
 
-rule rename_copy_Discovar:
+rule renameDiscovar:
     input:
         "assemblies/{id}_DISCOVAR/a.final/a.fasta"
     output:
-        "assemblies/contigs/{id}_contigs_DISCOVAR.fasta",
+        "assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta"
     shell:
         "cp {input} {output}"
 
+
 rule quast_contigs_summary:
     input:
-        soapdenovo = expand("assemblies/contigs/{id}_contigs_SOAP_{kmer}K.fasta", id = id_list, kmer = kmer_ext),
-        abyss = expand("assemblies/contigs/{id}_contigs_ABYSS_{kmer}K.fasta", id = id_list, kmer = kmer_ext),
-        discovar = expand("assemblies/contigs/{id}_contigs_DISCOVAR.fasta", id = id_list)
+        soapdenovo = expand("assemblies/{id}_SOAPDENOVO/{id}_soap_{kmer}K.scafSeq", id = id_list,  kmer = kmer_ext),
+        abyss = expand("assemblies/{id}_ABySS/{id}_abyss_{kmer}K-scaffolds.fa", id = id_list,  kmer = kmer_ext),
+        discovar = expand("assemblies/{id}_DISCOVAR/a.final/{id}_discovar.fasta", id = id_list)
     output:
         "reports/QUAST_contigs/transposed_report.tsv"
     params:
@@ -280,9 +264,9 @@ rule extract_best_N50_contigs_for_BUSCO:
         "metaAndconfig/bestN50/{id}_{assembler}_highestN50.txt"
     params:
         metadata = config["sample_mt"],
-        #outdir = "metaAndconfig/bestN50/"
+        outdir = "metaAndconfig/bestN50/"
     shell:
-        "python scripts/gethighestN50.py {wildcards.id} {params.metadata} {input}" #{params.outdir}"
+        "python scripts/gethighestN50.py {wildcards.id} {params.metadata} {input} {params.outdir}"
 
 rule BUSCO_contigs:
     input:
