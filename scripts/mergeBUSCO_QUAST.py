@@ -47,7 +47,7 @@ quast_report = pd.read_csv(quast,sep='\t',header=(0))
 
 final_report_raw = pd.merge(busco_report, quast_report, on = ["Assembly"])
 final_report_raw = final_report_raw.rename(columns={"# N's per 100 kbp": "NsPer100kbp"})
-final_report_raw.to_csv("../reports/final/BUSCOandQUAST_summary_final.tsv", sep="\t")
+final_report_raw.to_csv("reports/final/BUSCOandQUAST_summary_final.tsv", sep="\t")
 
 graphsIDs = ["{}_{}".format(i,j) for i, j in zip(final_report_raw["software"], final_report_raw["sequence_id"])] 
 sing = final_report_raw["Single"].to_numpy(dtype='float')
@@ -67,7 +67,7 @@ plt.title('% BUSCO genes', size = 16)
 plt.ylabel('% BUSCO genes', size = 14)
 plt.legend(loc='center', bbox_to_anchor=(1.15, 0.5))
 plt.tight_layout()
-plt.savefig('../reports/final/BUSCO_summary_PLOT.pdf')
+plt.savefig('reports/final/BUSCO_summary_PLOT.pdf')
 
 quastPlot = plt.figure(figsize=(12,6)) # Create matplotlib figure
 ax = quastPlot.add_subplot(111) # Create matplotlib axes
@@ -82,4 +82,4 @@ ax2.set_ylabel("# N's per 100 kbp", color = "C9", size = 14)
 ax2.tick_params(axis='y', colors='C9')
 plt.xlim((-0.8, len(final_report_raw)-0.2)) # makes edges of graph
 plt.tight_layout()
-plt.savefig('../reports/final/QUAST_summary_PLOT.pdf')
+plt.savefig('reports/final/QUAST_summary_PLOT.pdf')
