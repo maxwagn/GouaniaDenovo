@@ -15,19 +15,20 @@ sample_mt = pd.read_csv(config["sample_mt"],
                                 dtype=str, sep='\t').set_index("sequence_id", drop=False)
 sample_mt.drop_duplicates(inplace=True)
 n_samples = len(sample_mt)
-id_list = sample_mt["sequence_id"].tolist()
+#id_list = sample_mt["sequence_id"].tolist()
+id_list = ["TESTFILE"]
 readnames = ["1P", "2P"]
 kmer_ext = ["lower", "upper", "optimal"]
 assembly = ["SOAP", "ABYSS", "DISCOVAR"]
 
 rule all:
     input:
-        #"reports/raw/multiqc_report.html",
-        #"reports/trim/multiqc_report.html",
-        #"reports/QUAST_contigs/transposed_report.tsv",
-        #expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
-        "reports/final/BUSCOandQUAST_summary_final.tsv"
-        #"reports/BUSCOlogs/busco.done"
+        "reports/raw/multiqc_report.html",
+        "reports/trim/multiqc_report.html",
+        "reports/QUAST_contigs/transposed_report.tsv",
+        expand("reports/BUSCO_contigs/{{id}}_{{assembler}}_busco/{{id}}_{{assembler}}_busco/run_{}/short_summary.txt".format(config["BUSCO"]["lineage"]), id = id_list, assembler = assembly),
+        #"reports/final/BUSCOandQUAST_summary_final.tsv"
+        "reports/BUSCOlogs/busco.done"
 
 rule fastqc_raw:
     input:

@@ -5,7 +5,7 @@
 This pipeline runs now in the TESTFOLDER. 
 The previous one (AByss_problems_Snakefile) had several problems that arose because it is not possible to write multiple ABySS runs into same directory.
 
-<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag_graphs/dag_new_final2.svg">
+<img src="https://github.com/maxwagn/GouaniaDenovo/blob/master/dag_graphs/dag_final_final.svg">
 
 ## Final results
 
